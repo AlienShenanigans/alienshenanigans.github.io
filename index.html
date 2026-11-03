@@ -1,18 +1,81 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Alien Shenanigans</title>
-<meta name="description" content="Alien Shenanigans: gaming VTuber Ali. Streams on Twitch, clips on YouTube.">
+<meta name="description" content="Ali, a gaming VTuber and alien on the internet for free. Streams on Twitch, clips on YouTube and TikTok.">
+<link rel="canonical" href="https://alienshenanigans.github.io/">
+<meta name="google-site-verification" content="cjkPni7ZcKdrzP3UuNltA8f3O-1U_ChMSPtEaLhX4ME">
+<meta name="theme-color" content="#0c0624">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Alien Shenanigans">
+<meta property="og:title" content="Alien Shenanigans">
+<meta property="og:description" content="Ali, a gaming VTuber and alien on the internet for free. Streams on Twitch, clips on YouTube and TikTok.">
+<meta property="og:url" content="https://alienshenanigans.github.io/">
+<meta property="og:image" content="https://alienshenanigans.github.io/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Alien Shenanigans: alien on the internet for free, with chibi Ali">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Alien Shenanigans">
+<meta name="twitter:description" content="Ali, a gaming VTuber and alien on the internet for free. Streams on Twitch, clips on YouTube and TikTok.">
+<meta name="twitter:image" content="https://alienshenanigans.github.io/og-image.jpg">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"WebSite","@id":"https://alienshenanigans.github.io/#website","name":"Alien Shenanigans","url":"https://alienshenanigans.github.io/","publisher":{"@id":"https://alienshenanigans.github.io/#ali"}},
+{"@type":"Person","@id":"https://alienshenanigans.github.io/#ali","name":"Alien Shenanigans","alternateName":["Ali","AlienShenanigans"],"description":"Gaming VTuber and alien on the internet for free.","url":"https://alienshenanigans.github.io/","image":"https://alienshenanigans.github.io/avatar.jpg",
+"sameAs":["https://www.youtube.com/@AlienShenanigans","https://www.twitch.tv/alienshenanigans","https://www.tiktok.com/@alienshenanigans","https://discord.gg/VghJEGgXea"]}
+]}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@700&family=Quicksand:wght@500;600;700&display=swap">
 <style>
-:root{--bg:#0d0b14;--fg:#ece8f5;--mut:#a39cb8;--acc:#7cff6b}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;padding:16px}
-main{max-width:420px;width:100%;text-align:center}
-h1{font-size:2rem;margin:0 0 4px}p{color:var(--mut);margin:0 0 24px}
-a{display:block;padding:14px;margin:10px 0;border:1px solid #2c2640;border-radius:12px;color:var(--fg);text-decoration:none;font-weight:600}
-a:hover{border-color:var(--acc);color:var(--acc)}
-</style></head><body><main>
-<h1>Alien Shenanigans</h1>
+:root{
+  --void:#0c0624;--nebula:#1e123c;--glow:#3a2266;--panel:#06061e;
+  --ink:#f5f1fa;--ink-muted:#b8b0d4;--lavender:#c898f0;--lavender-soft:#9690cc;
+  --gold:#e8c47a;--spark:#fcf6d2;
+  --display:"Sora",system-ui,sans-serif;--sans:"Quicksand","Comfortaa",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:48px 16px;overflow-x:hidden;position:relative;
+  background:radial-gradient(900px 600px at 85% 105%,var(--glow),transparent 60%),radial-gradient(700px 500px at 0% 0%,var(--nebula),transparent 70%),var(--void);
+  color:var(--ink);font:500 16px/1.5 var(--sans)}
+.sky{position:fixed;inset:0;pointer-events:none}
+.sky i{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--spark);opacity:.7;animation:twinkle 5s ease-in-out infinite alternate}
+.sky i:nth-child(2n){width:2px;height:2px;animation-delay:-2s}
+.sky i:nth-child(3n){animation-delay:-3.5s}
+.sky svg{position:absolute;fill:var(--gold)}
+@keyframes twinkle{from{opacity:.25}to{opacity:.8}}
+main{position:relative;max-width:420px;width:100%;text-align:center}
+.avatar{width:128px;height:128px;border-radius:50%;border:3px solid var(--lavender-soft);box-shadow:0 0 24px rgba(200,152,240,.35);display:block;margin:0 auto 20px}
+h1{font:700 2.5rem/1.05 var(--display);margin:0;letter-spacing:-.5px}
+h1 span{color:var(--lavender)}
+.tag{display:inline-block;margin:16px 0 12px;padding:4px 16px;border:1.5px solid var(--lavender-soft);border-radius:999px;font-weight:600;font-size:15px}
+p{color:var(--ink-muted);margin:0 0 28px}
+nav a{display:block;padding:14px 16px;margin:12px 0;background:var(--panel);border:1.5px solid var(--lavender-soft);border-radius:16px;color:var(--ink);text-decoration:none;font-weight:700;font-size:17px;transition:border-color .15s,color .15s,transform .15s}
+nav a:hover{border-color:var(--lavender);color:var(--lavender);transform:translateY(-1px)}
+nav a:focus-visible{outline:2px solid var(--lavender);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.sky i{animation:none}nav a{transition:none}nav a:hover{transform:none}}
+</style></head><body>
+<div class="sky" aria-hidden="true">
+  <i style="left:8%;top:12%"></i><i style="left:23%;top:78%"></i><i style="left:37%;top:6%"></i>
+  <i style="left:71%;top:22%"></i><i style="left:88%;top:58%"></i><i style="left:14%;top:46%"></i>
+  <i style="left:62%;top:90%"></i><i style="left:93%;top:9%"></i><i style="left:48%;top:64%"></i>
+  <svg style="left:78%;top:14%" width="22" height="22" viewBox="0 0 24 24"><path d="M12 0C13 8 16 11 24 12 16 13 13 16 12 24 11 16 8 13 0 12 8 11 11 8 12 0Z"/></svg>
+  <svg style="left:10%;top:70%" width="16" height="16" viewBox="0 0 24 24"><path d="M12 0C13 8 16 11 24 12 16 13 13 16 12 24 11 16 8 13 0 12 8 11 11 8 12 0Z"/></svg>
+</div>
+<main>
+<img class="avatar" src="avatar.jpg" width="128" height="128" alt="Chibi Ali, a purple-haired green alien with antennae">
+<h1>Alien <span>Shenanigans</span></h1>
+<div class="tag">alien on the internet for free</div>
 <p>Ali, a gaming VTuber. Proper site coming soon.</p>
+<nav>
 <a href="https://www.youtube.com/@AlienShenanigans">YouTube</a>
 <a href="https://www.twitch.tv/alienshenanigans">Twitch</a>
+<a href="https://www.tiktok.com/@alienshenanigans">TikTok</a>
 <a href="https://discord.gg/VghJEGgXea">Discord</a>
+</nav>
 </main></body></html>
