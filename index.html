@@ -1,18 +1,51 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Alien Shenanigans</title>
-<meta name="description" content="Alien Shenanigans: gaming VTuber Ali. Streams on Twitch, clips on YouTube.">
+<meta name="description" content="Alien Shenanigans: gaming VTuber Ali. Streams on Twitch, clips on YouTube and TikTok.">
+<link rel="canonical" href="https://alienshenanigans.github.io/">
+<meta name="theme-color" content="#0d0b14">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👽</text></svg>">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Alien Shenanigans">
+<meta property="og:title" content="Alien Shenanigans">
+<meta property="og:description" content="Ali, a gaming VTuber. Streams on Twitch, clips on YouTube and TikTok.">
+<meta property="og:url" content="https://alienshenanigans.github.io/">
+<meta property="og:image" content="https://alienshenanigans.github.io/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Alien Shenanigans">
+<meta name="twitter:description" content="Ali, a gaming VTuber. Streams on Twitch, clips on YouTube and TikTok.">
+<meta name="twitter:image" content="https://alienshenanigans.github.io/og-image.png">
+
 <style>
 :root{--bg:#0d0b14;--fg:#ece8f5;--mut:#a39cb8;--acc:#7cff6b}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;padding:16px}
-main{max-width:420px;width:100%;text-align:center}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif;padding:16px;position:relative;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.6;background-image:
+  radial-gradient(1.5px 1.5px at 10% 20%,#fff,transparent),
+  radial-gradient(1.5px 1.5px at 80% 15%,#fff,transparent),
+  radial-gradient(1px 1px at 60% 45%,#fff,transparent),
+  radial-gradient(1.5px 1.5px at 25% 65%,#fff,transparent),
+  radial-gradient(1px 1px at 90% 70%,#fff,transparent),
+  radial-gradient(1.5px 1.5px at 45% 85%,#fff,transparent),
+  radial-gradient(1px 1px at 15% 90%,#fff,transparent),
+  radial-gradient(1.5px 1.5px at 70% 30%,#fff,transparent);
+  animation:twinkle 4s ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:.35}to{opacity:.75}}
+main{max-width:420px;width:100%;text-align:center;position:relative}
+.glyph{font-size:3rem;margin-bottom:4px;filter:drop-shadow(0 0 24px rgba(124,255,107,.45))}
 h1{font-size:2rem;margin:0 0 4px}p{color:var(--mut);margin:0 0 24px}
-a{display:block;padding:14px;margin:10px 0;border:1px solid #2c2640;border-radius:12px;color:var(--fg);text-decoration:none;font-weight:600}
-a:hover{border-color:var(--acc);color:var(--acc)}
+a{display:block;padding:14px;margin:10px 0;border:1px solid #2c2640;border-radius:12px;color:var(--fg);text-decoration:none;font-weight:600;transition:border-color .15s,color .15s,transform .15s}
+a:hover{border-color:var(--acc);color:var(--acc);transform:translateY(-1px)}
+@media (prefers-reduced-motion: reduce){body::before{animation:none}}
 </style></head><body><main>
+<div class="glyph" aria-hidden="true">👽</div>
 <h1>Alien Shenanigans</h1>
 <p>Ali, a gaming VTuber. Proper site coming soon.</p>
 <a href="https://www.youtube.com/@AlienShenanigans">YouTube</a>
 <a href="https://www.twitch.tv/alienshenanigans">Twitch</a>
+<a href="https://www.tiktok.com/@alienshenanigans">TikTok</a>
 <a href="https://discord.gg/VghJEGgXea">Discord</a>
 </main></body></html>
