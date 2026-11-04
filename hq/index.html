@@ -109,8 +109,14 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     <div id="stream"></div>
   </section>
 
+  <section class="card" aria-labelledby="yta-h">
+    <h2 id="yta-h">YouTube, <span>last 28 days</span></h2>
+    <div id="yta"></div>
+  </section>
+
   <div class="grid">
     <section class="card" aria-labelledby="yt-h"><h2 id="yt-h">Latest on <span>YouTube</span></h2><div id="yt"></div></section>
+    <section class="card" aria-labelledby="sc-h"><h2 id="sc-h">Found on <span>Google</span></h2><div id="search"></div></section>
     <section class="card" aria-labelledby="tr-h"><h2 id="tr-h">What's <span>trending</span></h2><div id="trending"></div></section>
   </div>
 
@@ -184,7 +190,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 
   function render() {
     $('updated').textContent = data.updatedAt ? 'Data updated ' + when(data.updatedAt) : '';
-    renderTake(); renderPlatforms(); renderSessions(); renderYouTube(); renderTrending(); renderNotes();
+    renderTake(); renderPlatforms(); renderSessions(); renderYouTubeAnalytics(); renderYouTube(); renderSearch(); renderTrending(); renderNotes();
   }
 
   function renderTake() {
@@ -273,7 +279,8 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     lineChart($('c-chat'), 'Chat messages per minute', s, 2, 'var(--gold)', 'bar', 'messages');
   }
 
-  function lineChart(host, title, s, col, color, kind, unit) {
+  function lineChart(host, title, s, col, color, kind, unit, step, where) {
+    step = step || 30; where = where || function (i, p) { return p[0] + ' (min ' + i + ')'; };
     clear(host);
     var NS = 'http://www.w3.org/2000/svg';
     var W = Math.max(280, host.clientWidth || 600), H = 150, pad = { l: 28, r: 8, t: 10, b: 22 };
@@ -291,7 +298,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
       var tx = sv('text', { x: pad.l - 8, y: y(t) + 4, 'text-anchor': 'end', fill: '#7f78a3', 'font-size': 11 }); tx.textContent = t; svg.appendChild(tx);
     });
     // x labels every 30 minutes
-    for (var i = 0; i < n; i += 30) {
+    for (var i = 0; i < n; i += step) {
       var tx2 = sv('text', { x: x(i), y: H - 6, 'text-anchor': i === 0 ? 'start' : 'middle', fill: '#7f78a3', 'font-size': 11 });
       tx2.textContent = pts[i][0]; svg.appendChild(tx2);
     }
@@ -326,7 +333,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
       cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('opacity', .6);
       dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(p[col])); dot.setAttribute('opacity', 1);
       clear(tip).appendChild(el('b', { text: String(p[col]) + ' ' + unit }));
-      tip.appendChild(document.createTextNode(' · ' + p[0] + ' (min ' + i + ')' + (p[3] ? ' · ad ' + p[3] + 's' : '')));
+      tip.appendChild(document.createTextNode(' · ' + where(i, p) + (p[3] ? ' · ad ' + p[3] + 's' : '')));
       tip.style.opacity = 1;
       var left = x(i) * (r.width / W) + 12, tw = tip.offsetWidth;
       if (left + tw > r.width) left = x(i) * (r.width / W) - tw - 12;
@@ -339,7 +346,92 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
   }
 
   var rt;
-  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(drawStreamCharts, 120); });
+  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { drawStreamCharts(); drawYtChart(); }, 120); });
+
+
+  // ---------- YouTube Analytics ----------
+  var SOURCE_NAMES = { SHORTS: 'Shorts feed', YT_SEARCH: 'YouTube search', SUBSCRIBER: 'Subscribers', RELATED_VIDEO: 'Suggested videos',
+    BROWSE: 'Home & browse', EXT_URL: 'Other websites', YT_CHANNEL: 'Your channel page', NO_LINK_OTHER: 'Direct / unknown',
+    PLAYLIST: 'Playlists', NOTIFICATION: 'Notifications', YT_OTHER_PAGE: 'Other YouTube pages', END_SCREEN: 'End screens',
+    HASHTAGS: 'Hashtag pages', SOUND_PAGE: 'Sound pages', ANNOTATION: 'Cards', VIDEO_REMIXES: 'Remixes', LIVE_REDIRECT: 'Live redirects' };
+  var FORMAT_NAMES = { SHORTS: 'Shorts', VIDEO_ON_DEMAND: 'Videos', LIVE_STREAM: 'Live', STORY: 'Stories' };
+  function mmss(sec) { sec = Math.round(sec || 0); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+
+  var ytPts = null;
+  function drawYtChart() {
+    var host = $('c-ytdaily');
+    if (host && ytPts) lineChart(host, 'Views per day', { series: ytPts }, 1, 'var(--lavender)', 'line', 'views', 7,
+      function (i, p) { return p[0] + (p[2] ? ' · ' + (p[2] > 0 ? '+' : '') + p[2] + ' subs' : ''); });
+  }
+
+  function renderYouTubeAnalytics() {
+    var root = clear($('yta')), L = data.youtube.last28, daily = data.youtube.daily || [];
+    if (!L) { root.appendChild(empty('Switches on after the one-time Google sign-in: watch time, % viewed, where views come from.')); return; }
+    var days = daily.filter(function (d) { return d.day >= L.from && d.day <= L.to; });
+    var sum = function (k) { return days.reduce(function (a, d) { return a + (d[k] || 0); }, 0); };
+    var views = sum('views'), mins = sum('estimatedMinutesWatched'), net = sum('subscribersGained') - sum('subscribersLost');
+    var prev = daily.filter(function (d) { return d.day < L.from; }).slice(-28);
+    var prevViews = prev.length >= 28 ? prev.reduce(function (a, d) { return a + d.views; }, 0) : null;
+    function tile(k, v, d) { return el('div', { class: 'tile' }, [el('div', { class: 'k', text: k }), el('div', { class: 'v', text: v }), d ? el('div', { class: 'd', text: d }) : null]); }
+    root.appendChild(el('div', { class: 'tiles', style: 'margin-bottom:8px' }, [
+      tile('Views', fmt.format(views), prevViews == null ? day(L.from) + ' – ' + day(L.to) : 'vs ' + fmt.format(prevViews) + ' the 28 days before'),
+      tile('Watch time', (Math.round(mins / 6) / 10) + ' h', fmt.format(Math.round(mins)) + ' minutes'),
+      tile('Avg view', mmss(views ? mins * 60 / views : 0), 'per view'),
+      tile('Subscribers', (net >= 0 ? '+' : '') + net, sum('subscribersGained') + ' gained, ' + sum('subscribersLost') + ' lost'),
+    ]));
+    ytPts = days.map(function (d) { return [new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(d.day + 'T12:00:00Z')), d.views, d.subscribersGained - d.subscribersLost, 0]; });
+    if (ytPts.length > 1) { root.appendChild(el('div', { class: 'chart', id: 'c-ytdaily' })); drawYtChart(); }
+
+    var grid = el('div', { class: 'take-cols', style: 'margin-top:16px' });
+    var totalSrc = L.sources.reduce(function (a, x) { return a + x.views; }, 0) || 1;
+    grid.appendChild(el('div', null, [el('h3', { style: 'font-size:.95rem;margin:0 0 8px', text: 'Where views come from' })].concat(
+      L.sources.slice(0, 7).map(function (x) {
+        var pct = Math.round(x.views / totalSrc * 100);
+        return el('div', { style: 'margin-bottom:8px' }, [
+          el('div', { style: 'display:flex;justify-content:space-between;font-size:14px' }, [el('span', { text: SOURCE_NAMES[x.source] || x.source }), el('span', { class: 'muted', text: fmt.format(x.views) + ' · ' + pct + '%' })]),
+          el('div', { style: 'height:6px;border-radius:3px;background:var(--nebula);margin-top:3px' }, [el('div', { style: 'height:6px;border-radius:3px;background:var(--lavender);width:' + Math.max(2, pct) + '%' })]),
+        ]);
+      }))));
+    if (L.formats && L.formats.length) {
+      grid.appendChild(el('div', null, [el('h3', { style: 'font-size:.95rem;margin:0 0 8px', text: 'Shorts vs videos' })].concat(
+        L.formats.filter(function (f) { return f.views; }).map(function (f) {
+          return el('div', { class: 'note' }, [el('b', { text: FORMAT_NAMES[f.type] || f.type }), el('div', { class: 'faint', text: fmt.format(f.views) + ' views · ' + Math.round(f.avgPercent || 0) + '% viewed on average · ' + fmt.format(Math.round(f.minutes)) + ' min watched' })]);
+        }))));
+    }
+    root.appendChild(grid);
+
+    var rows = L.topVideos.map(function (v) {
+      var a = el('a', { href: 'https://youtu.be/' + v.id, target: '_blank', rel: 'noopener', text: v.title });
+      return el('tr', null, [
+        el('td', null, [a, v.seconds != null ? ' ' : null, v.seconds != null ? el('span', { class: 'pill', text: v.seconds <= 180 ? 'Short' : 'Video' }) : null]),
+        el('td', { class: 'n', text: fmt.format(v.views) }),
+        el('td', { class: 'n', text: Math.round(v.avgPercent) + '%' }),
+        el('td', { class: 'n', text: mmss(v.avgSeconds) }),
+        el('td', { class: 'n', text: '+' + v.subs }),
+      ]);
+    });
+    root.appendChild(el('h3', { style: 'font-size:.95rem;margin:20px 0 6px', text: 'Top videos' }));
+    root.appendChild(el('div', { class: 'scroll' }, [el('table', null, [
+      el('thead', null, [el('tr', null, [el('th', { text: 'Title' }), el('th', { class: 'n', text: 'Views' }), el('th', { class: 'n', text: '% viewed' }), el('th', { class: 'n', text: 'Avg view' }), el('th', { class: 'n', text: 'Subs' })])]),
+      el('tbody', null, rows)])]));
+  }
+
+  // ---------- Search Console ----------
+  function renderSearch() {
+    var root = clear($('search')), S = data.search;
+    if (!S) { root.appendChild(empty('Switches on after the one-time Google sign-in.')); return; }
+    var clicks = S.daily.reduce(function (a, d) { return a + d.clicks; }, 0), imps = S.daily.reduce(function (a, d) { return a + d.impressions; }, 0);
+    root.appendChild(el('div', { class: 'tiles', style: 'margin-bottom:12px' }, [
+      el('div', { class: 'tile' }, [el('div', { class: 'k', text: 'Clicks' }), el('div', { class: 'v', text: fmt.format(clicks) }), el('div', { class: 'd', text: 'last 30 days' })]),
+      el('div', { class: 'tile' }, [el('div', { class: 'k', text: 'Seen in search' }), el('div', { class: 'v', text: fmt.format(imps) }), el('div', { class: 'd', text: 'times' })]),
+    ]));
+    if (!S.queries.length) { root.appendChild(empty('No search terms yet. Google needs a little traffic before it shows them.')); return; }
+    root.appendChild(el('div', { class: 'scroll' }, [el('table', null, [
+      el('thead', null, [el('tr', null, [el('th', { text: 'People searched' }), el('th', { class: 'n', text: 'Seen' }), el('th', { class: 'n', text: 'Clicks' }), el('th', { class: 'n', text: 'Rank' })])]),
+      el('tbody', null, S.queries.slice(0, 12).map(function (q) {
+        return el('tr', null, [el('td', { text: q.query }), el('td', { class: 'n', text: fmt.format(q.impressions) }), el('td', { class: 'n', text: fmt.format(q.clicks) }), el('td', { class: 'n', text: (Math.round(q.position * 10) / 10).toString() })]);
+      }))])]));
+  }
 
   // ---------- YouTube ----------
   function renderYouTube() {

@@ -125,6 +125,77 @@ function isoSeconds(d) {
   return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0);
 }
 
+// ---------- YouTube Analytics + Search Console (one Google sign-in) ----------
+const daysAgo = (n) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+
+async function fetchGoogleOAuth(data) {
+  const id = process.env.GOOGLE_CLIENT_ID, secret = process.env.GOOGLE_CLIENT_SECRET, refresh = process.env.GOOGLE_REFRESH_TOKEN;
+  if (!id || !secret || !refresh) return console.log('YouTube Analytics / Search Console: skipped (no GOOGLE_* secrets)');
+  const tok = await getJson('https://oauth2.googleapis.com/token', {
+    method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: id, client_secret: secret, refresh_token: refresh, grant_type: 'refresh_token' }),
+  });
+  const auth = { Authorization: `Bearer ${tok.access_token}` };
+  const parts = [['YouTube Analytics', () => ytAnalytics(data, auth)], ['Search Console', () => searchConsole(data, auth)]];
+  for (const [name, run] of parts) {
+    try { await run(); } catch (e) { console.error(`${name} failed:`, e.message); process.exitCode = 1; }
+  }
+}
+
+async function ytAnalytics(data, auth) {
+  const report = async (q) => {
+    const r = await getJson(`https://youtubeanalytics.googleapis.com/v2/reports?${new URLSearchParams({ ids: 'channel==MINE', ...q })}`, { headers: auth });
+    const cols = r.columnHeaders.map((c) => c.name);
+    return (r.rows || []).map((row) => Object.fromEntries(cols.map((c, i) => [c, row[i]])));
+  };
+  const range = { startDate: daysAgo(30), endDate: daysAgo(0) };
+  const last28 = { startDate: daysAgo(28), endDate: daysAgo(1) };
+
+  const daily = await report({ ...range, dimensions: 'day', sort: 'day',
+    metrics: 'views,estimatedMinutesWatched,averageViewDuration,subscribersGained,subscribersLost' });
+  const yt = data.youtube;
+  yt.daily ??= [];
+  for (const d of daily) yt.daily = upsert(yt.daily, d, (x) => x.day, 400);
+  yt.daily.sort((a, b) => a.day.localeCompare(b.day));
+
+  const top = await report({ ...last28, dimensions: 'video', sort: '-views', maxResults: 15,
+    metrics: 'views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,subscribersGained,likes' });
+  const known = Object.fromEntries((yt.videos || []).map((v) => [v.id, v]));
+  const missing = top.map((t) => t.video).filter((v) => !known[v]);
+  if (missing.length && process.env.YT_API_KEY) {
+    const r = await getJson(`https://www.googleapis.com/youtube/v3/videos?${new URLSearchParams({ part: 'snippet,contentDetails', id: missing.join(','), key: process.env.YT_API_KEY })}`);
+    for (const v of r.items) known[v.id] = { title: v.snippet.title.replace(/\s*#\S+/g, '').trim(), seconds: isoSeconds(v.contentDetails.duration) };
+  }
+  const sources = await report({ ...last28, dimensions: 'insightTrafficSourceType', sort: '-views', metrics: 'views' });
+  let formats = [];
+  try { formats = await report({ ...last28, dimensions: 'creatorContentType', metrics: 'views,estimatedMinutesWatched,averageViewPercentage' }); }
+  catch (e) { console.log('Shorts vs videos split not available:', e.message.slice(0, 120)); }
+
+  yt.last28 = {
+    from: last28.startDate, to: last28.endDate, at: new Date().toISOString(),
+    topVideos: top.map((t) => ({ id: t.video, title: known[t.video]?.title || t.video, seconds: known[t.video]?.seconds ?? null,
+      views: t.views, minutes: t.estimatedMinutesWatched, avgSeconds: t.averageViewDuration, avgPercent: t.averageViewPercentage,
+      subs: t.subscribersGained, likes: t.likes })),
+    sources: sources.map((s) => ({ source: s.insightTrafficSourceType, views: s.views })),
+    formats: formats.map((f) => ({ type: f.creatorContentType, views: f.views, minutes: f.estimatedMinutesWatched, avgPercent: f.averageViewPercentage })),
+  };
+  console.log(`YouTube Analytics: ${daily.length} days, ${top.length} top videos, ${sources.length} traffic sources`);
+}
+
+async function searchConsole(data, auth) {
+  const sites = (await getJson('https://www.googleapis.com/webmasters/v3/sites', { headers: auth })).siteEntry || [];
+  const site = sites.find((s) => s.siteUrl.includes('alienshenanigans'))?.siteUrl;
+  if (!site) return console.log('Search Console: no alienshenanigans property on this Google account. Sites seen:', sites.map((s) => s.siteUrl).join(', ') || 'none');
+  const q = (body) => getJson(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`,
+    { method: 'POST', headers: { ...auth, 'content-type': 'application/json' }, body: JSON.stringify({ startDate: daysAgo(30), endDate: daysAgo(1), ...body }) });
+  const [byDate, byQuery, byPage] = await Promise.all([
+    q({ dimensions: ['date'] }), q({ dimensions: ['query'], rowLimit: 25 }), q({ dimensions: ['page'], rowLimit: 10 }),
+  ]);
+  const rows = (r, key) => (r.rows || []).map((x) => ({ [key]: x.keys[0], clicks: x.clicks, impressions: x.impressions, ctr: x.ctr, position: x.position }));
+  data.search = { site, at: new Date().toISOString(), daily: rows(byDate, 'date'), queries: rows(byQuery, 'query'), pages: rows(byPage, 'page') };
+  console.log(`Search Console: ${data.search.queries.length} search terms, ${data.search.daily.length} days`);
+}
+
 async function fetchTwitch(data) {
   const id = process.env.TWITCH_CLIENT_ID, secret = process.env.TWITCH_CLIENT_SECRET;
   if (!id || !secret) return console.log('Twitch: skipped (no TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET)');
@@ -154,6 +225,9 @@ function briefFor(data) {
     twitchVods: data.twitch.vods,
     youtubeChannel: data.youtube.snapshots.filter((s) => s.date >= cutoff),
     youtubeRecentVideos: data.youtube.videos,
+    youtubeLast28Days: data.youtube.last28,
+    youtubeDaily: (data.youtube.daily || []).slice(-28),
+    googleSearch: data.search ? { queries: data.search.queries, pages: data.search.pages } : null,
     trending: data.trending,
     creatorNotes: data.notes.slice(-10),
     previousTake: data.take,
@@ -198,7 +272,7 @@ const commands = {
   async fetch() {
     const data = await load();
     const before = JSON.stringify(data);
-    for (const f of [fetchYouTube, fetchTwitch]) {
+    for (const f of [fetchYouTube, fetchGoogleOAuth, fetchTwitch]) {
       try { await f(data); } catch (e) { console.error(`${f.name} failed:`, e.message); process.exitCode = 1; }
     }
     if (JSON.stringify(data) === before) return console.log('Nothing new: data file left as is.');
