@@ -10,6 +10,9 @@
 //   node tools/hq/hq.mjs tiktok-connect <code>   one-time: swaps the TikTok sign-in code for a token
 //   node tools/hq/hq.mjs show           prints the decrypted data
 //   node tools/hq/hq.mjs rekey          re-encrypts with NEW_HQ_PASSWORD
+//   node tools/hq/hq.mjs short-link <youtubeId> <tiktokId|none|auto>   fixes a wrong Shorts match
+//   node tools/hq/hq.mjs short-tag <youtubeId|tiktokId> [--game "Slender"] [--hook "said I felt safe"] [--grade A] [--desk <deskId>]
+//   node tools/hq/hq.mjs goal <key> <target|off> [--by YYYY-MM-DD]   keys: twitch-followers, yt-subs, yt-views, tt-followers, tt-likes
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { load, save, upsert } from './vault.mjs';
@@ -269,6 +272,33 @@ async function fetchTikTok(data) {
   console.log(`TikTok: ${user.follower_count} followers, ${data.tiktok.videos.length} recent videos`);
 }
 
+// ---------- per-video history (Shorts tab: views at ~24h and ~7 days; TikTok conversion) ----------
+// data.shorts.history['yt:<id>' | 'tt:<id>'] = [[ 'YYYY-MM-DDTHH:MM' (UTC), views, likes ], ...]
+// One entry per UTC day (a later run the same day replaces it). Videos older than 60 days only get a new
+// entry when their views moved, so the file stays small.
+function trackShorts(data, now = new Date()) {
+  data.shorts ??= {};
+  const sh = data.shorts;
+  sh.history ??= {}; sh.links ??= {}; sh.tags ??= {};
+  const at = now.toISOString().slice(0, 16), day = at.slice(0, 10);
+  const add = (key, v) => {
+    if (v.scheduled || new Date(v.published) > now) return;
+    const h = (sh.history[key] ??= []);
+    const last = h[h.length - 1];
+    const entry = [at, v.views ?? 0, v.likes ?? 0];
+    if (last && last[0].slice(0, 10) === day) { h[h.length - 1] = entry; return; }
+    const old = now - new Date(v.published) > 60 * 864e5;
+    if (old && last && last[1] === entry[1]) return;
+    h.push(entry);
+    if (h.length > 40) h.splice(0, h.length - 40);
+  };
+  for (const v of data.youtube.videos || []) if (v.seconds <= 180) add('yt:' + v.id, v);
+  for (const v of data.tiktok?.videos || []) add('tt:' + v.id, v);
+  // forget videos nobody has seen for 120 days
+  const cutoff = new Date(now - 120 * 864e5).toISOString();
+  for (const k of Object.keys(sh.history)) { const h = sh.history[k]; if (!h.length || h[h.length - 1][0] < cutoff) delete sh.history[k]; }
+}
+
 // ---------- Claude's take ----------
 function briefFor(data) {
   const cutoff = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
@@ -331,6 +361,7 @@ const commands = {
     for (const f of [fetchYouTube, fetchGoogleOAuth, fetchTwitch, fetchTikTok]) {
       try { await f(data); } catch (e) { console.error(`${f.name} failed:`, e.message); process.exitCode = 1; }
     }
+    trackShorts(data);
     if (JSON.stringify(data) === before) return console.log('Nothing new: data file left as is.');
     await save(data);
   },
@@ -345,11 +376,48 @@ const commands = {
     data.notes.push({ at: new Date().toISOString(), from: flag('from') || null, text: rest[0] });
     await save(data);
   },
+  async 'short-link'() {
+    const [yt, tt] = rest;
+    if (!yt || !tt) throw new Error('Usage: short-link <youtubeId> <tiktokId|none|auto>');
+    const data = await load();
+    data.shorts ??= {}; data.shorts.links ??= {};
+    if (tt === 'auto') delete data.shorts.links[yt];
+    else data.shorts.links[yt] = tt === 'none' ? null : tt;
+    await save(data);
+    console.log(tt === 'auto' ? `${yt}: back to automatic matching` : `${yt} -> ${tt === 'none' ? 'no TikTok' : 'TikTok ' + tt}`);
+  },
+  async 'short-tag'() {
+    const id = rest[0];
+    if (!id || id.startsWith('--')) throw new Error('Usage: short-tag <youtubeId|tiktokId> [--game ..] [--hook ..] [--grade ..] [--desk ..]');
+    const data = await load();
+    data.shorts ??= {}; data.shorts.tags ??= {};
+    const t = { ...(data.shorts.tags[id] || {}) };
+    for (const k of ['game', 'hook', 'grade', 'desk']) { const v = flag(k); if (v !== undefined) { if (v === '') delete t[k]; else t[k] = v; } }
+    if (Object.keys(t).length) data.shorts.tags[id] = t; else delete data.shorts.tags[id];
+    await save(data);
+    console.log(id, t);
+  },
+  async goal() {
+    const KEYS = ['twitch-followers', 'yt-subs', 'yt-views', 'tt-followers', 'tt-likes'];
+    const [key, target] = rest;
+    if (!KEYS.includes(key) || !target) throw new Error(`Usage: goal <${KEYS.join('|')}> <target|off> [--by YYYY-MM-DD]`);
+    const data = await load();
+    data.goals = (data.goals || []).filter((g) => g.key !== key);
+    if (target !== 'off') {
+      const n = Number(String(target).replace(/[ ,_]/g, ''));
+      if (!Number.isFinite(n) || n <= 0) throw new Error('Target must be a number.');
+      data.goals.push({ key, target: n, by: flag('by') || null, set: today() });
+      data.goals.sort((a, b) => KEYS.indexOf(a.key) - KEYS.indexOf(b.key));
+    }
+    await save(data);
+    console.log('Goals:', data.goals);
+  },
   async show() { console.log(JSON.stringify(await load(), null, 2)); },
   async rekey() {
     const next = process.env.NEW_HQ_PASSWORD;
     if (!next) throw new Error('Set NEW_HQ_PASSWORD.');
     await save(await load(), next);
+    await load(next); // proves the new password opens it
     console.log('Re-encrypted. Update the HQ_PASSWORD secret on GitHub to the new password.');
   },
 };
