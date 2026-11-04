@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /privacy.html
+Disallow: /terms.html
 Disallow: /hq/
 
 Sitemap: https://alienshenanigans.github.io/sitemap.xml

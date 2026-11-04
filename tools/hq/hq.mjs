@@ -7,6 +7,7 @@
 //   node tools/hq/hq.mjs take           asks Claude for the weekly take (needs ANTHROPIC_API_KEY)
 //   node tools/hq/hq.mjs set-take <file.json>   stores a take written elsewhere
 //   node tools/hq/hq.mjs note "<text>" [--from "YouTube Studio"]
+//   node tools/hq/hq.mjs tiktok-connect <code>   one-time: swaps the TikTok sign-in code for a token
 //   node tools/hq/hq.mjs show           prints the decrypted data
 //   node tools/hq/hq.mjs rekey          re-encrypts with NEW_HQ_PASSWORD
 import { readFile } from 'node:fs/promises';
@@ -215,6 +216,59 @@ async function fetchTwitch(data) {
   console.log(`Twitch: ${followers} followers, ${vods.length} VODs`);
 }
 
+// ---------- TikTok (Login Kit + Display API) ----------
+const TIKTOK_REDIRECT = 'https://alienshenanigans.github.io/hq/tiktok.html';
+
+async function tiktokToken(params) {
+  const key = process.env.TIKTOK_CLIENT_KEY, secret = process.env.TIKTOK_CLIENT_SECRET;
+  if (!key || !secret) throw new Error('TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET secrets are missing');
+  const r = await getJson('https://open.tiktokapis.com/v2/oauth/token/', {
+    method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_key: key, client_secret: secret, ...params }),
+  });
+  if (!r.access_token) throw new Error(`TikTok token error: ${r.error || ''} ${r.error_description || JSON.stringify(r).slice(0, 200)}`);
+  return r;
+}
+
+function keepTikTokAuth(data, r) {
+  data.tiktok ??= { snapshots: [], videos: [] };
+  data.tiktok.auth = {
+    open_id: r.open_id, scope: r.scope, refresh_token: r.refresh_token,
+    refresh_expires_at: new Date(Date.now() + (r.refresh_expires_in || 0) * 1000).toISOString(),
+  };
+}
+
+async function tiktokConnect(code) {
+  if (!code) throw new Error('Give the code from the TikTok sign-in page.');
+  const data = await load();
+  const r = await tiktokToken({ code: decodeURIComponent(code.trim()), grant_type: 'authorization_code', redirect_uri: TIKTOK_REDIRECT });
+  keepTikTokAuth(data, r);
+  await save(data);
+  console.log(`TikTok connected (scopes: ${r.scope}).`);
+}
+
+async function fetchTikTok(data) {
+  const refresh = data.tiktok?.auth?.refresh_token;
+  if (!refresh) return console.log('TikTok: skipped (not connected yet)');
+  const r = await tiktokToken({ grant_type: 'refresh_token', refresh_token: refresh });
+  keepTikTokAuth(data, r);
+  const auth = { Authorization: `Bearer ${r.access_token}` };
+  const check = (j) => { if (j.error && j.error.code !== 'ok') throw new Error(`TikTok: ${j.error.code} ${j.error.message}`); return j.data; };
+  const user = check(await getJson('https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,follower_count,following_count,likes_count,video_count', { headers: auth })).user;
+  data.tiktok.snapshots = upsert(data.tiktok.snapshots || [],
+    { date: today(), followers: user.follower_count, likes: user.likes_count, videos: user.video_count }, (x) => x.date, 400);
+  const fields = 'id,title,video_description,create_time,duration,view_count,like_count,comment_count,share_count,share_url';
+  const list = check(await getJson(`https://open.tiktokapis.com/v2/video/list/?fields=${fields}`, {
+    method: 'POST', headers: { ...auth, 'content-type': 'application/json' }, body: JSON.stringify({ max_count: 20 }),
+  }));
+  data.tiktok.videos = (list.videos || []).map((v) => ({
+    id: v.id, title: (v.title || v.video_description || '').replace(/\s*#\S+/g, '').trim() || '(no caption)',
+    published: new Date(v.create_time * 1000).toISOString(), seconds: v.duration, url: v.share_url,
+    views: v.view_count, likes: v.like_count, comments: v.comment_count, shares: v.share_count,
+  }));
+  console.log(`TikTok: ${user.follower_count} followers, ${data.tiktok.videos.length} recent videos`);
+}
+
 // ---------- Claude's take ----------
 function briefFor(data) {
   const cutoff = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
@@ -227,6 +281,7 @@ function briefFor(data) {
     youtubeRecentVideos: data.youtube.videos,
     youtubeLast28Days: data.youtube.last28,
     youtubeDaily: (data.youtube.daily || []).slice(-28),
+    tiktok: data.tiktok ? { followers: (data.tiktok.snapshots || []).filter((x) => x.date >= cutoff), recentVideos: data.tiktok.videos } : null,
     googleSearch: data.search ? { queries: data.search.queries, pages: data.search.pages } : null,
     trending: data.trending,
     creatorNotes: data.notes.slice(-10),
@@ -268,11 +323,12 @@ async function take() {
 
 // ---------- commands ----------
 const commands = {
+  'tiktok-connect': () => tiktokConnect(rest[0]),
   'add-twitch-csv': () => addTwitchCsv(rest[0]),
   async fetch() {
     const data = await load();
     const before = JSON.stringify(data);
-    for (const f of [fetchYouTube, fetchGoogleOAuth, fetchTwitch]) {
+    for (const f of [fetchYouTube, fetchGoogleOAuth, fetchTwitch, fetchTikTok]) {
       try { await f(data); } catch (e) { console.error(`${f.name} failed:`, e.message); process.exitCode = 1; }
     }
     if (JSON.stringify(data) === before) return console.log('Nothing new: data file left as is.');

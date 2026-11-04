@@ -9,6 +9,10 @@ on:
         description: 'Also write a new take with Claude'
         type: boolean
         default: false
+      tiktok_code:
+        description: 'TikTok sign-in code (one-time, from /hq/tiktok.html)'
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -23,6 +27,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Connect TikTok
+        if: ${{ inputs.tiktok_code != '' }}
+        env:
+          HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          CODE: ${{ inputs.tiktok_code }}
+        run: node tools/hq/hq.mjs tiktok-connect "$CODE"
       - name: Pull numbers
         env:
           HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}
@@ -32,6 +44,8 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
         run: node tools/hq/hq.mjs fetch
       - name: Weekly take (Mondays, or when asked)
         env:

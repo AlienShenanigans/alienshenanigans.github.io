@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Connect TikTok</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@700&family=Quicksand:wght@500;600;700&display=swap">
+<style>
+:root{--void:#0c0624;--panel:#06061e;--nebula:#1e123c;--ink:#f5f1fa;--muted:#b8b0d4;--lavender:#c898f0;--soft:#9690cc;--gold:#e8c47a;--warn:#f0b36b}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:var(--void);color:var(--ink);font:500 16px/1.5 "Quicksand",system-ui,sans-serif}
+main{width:100%;max-width:480px;padding:28px 22px;background:var(--panel);border:1.5px solid var(--soft);border-radius:28px}
+h1{font:700 1.5rem/1.2 "Sora",system-ui,sans-serif;margin:0 0 8px}
+h1 span{color:var(--lavender)}
+p{color:var(--muted);margin:8px 0}
+label{display:block;font-weight:700;margin-top:16px}
+input,textarea{width:100%;margin-top:6px;padding:12px 14px;border-radius:14px;border:1.5px solid var(--soft);background:var(--nebula);color:var(--ink);font:600 15px/1.4 ui-monospace,monospace}
+textarea{min-height:96px;resize:vertical;word-break:break-all}
+.btn{display:inline-block;margin-top:16px;padding:11px 22px;border-radius:14px;border:0;background:var(--gold);color:var(--void);font:700 16px "Quicksand",sans-serif;cursor:pointer;text-decoration:none}
+.btn.ghost{background:none;border:1.5px solid var(--soft);color:var(--ink)}
+ol{color:var(--muted);padding-left:20px}
+li{margin-bottom:6px}
+b{color:var(--ink)}
+a{color:var(--lavender)}
+.warn{color:var(--warn)}
+[hidden]{display:none!important}
+</style></head><body>
+<main>
+  <section id="start">
+    <h1>Connect <span>TikTok</span></h1>
+    <p>Signs Creator HQ into your TikTok so it can read your follower count and video stats. Read-only: it can't post anything.</p>
+    <label for="key">Client key <span style="font-weight:500;color:var(--muted)">(from your TikTok developer app)</span></label>
+    <input id="key" autocomplete="off" spellcheck="false">
+    <button class="btn" id="go" type="button">Sign in with TikTok</button>
+  </section>
+
+  <section id="got" hidden>
+    <h1>Almost <span>done</span></h1>
+    <p>Copy this code. It only works for a few minutes, so do the next steps straight away.</p>
+    <textarea id="code" readonly></textarea>
+    <button class="btn" id="copy" type="button">Copy code</button>
+    <ol style="margin-top:20px">
+      <li>Open <a href="https://github.com/AlienShenanigans/alienshenanigans.github.io/actions/workflows/hq-refresh.yml" target="_blank" rel="noopener">Refresh Creator HQ</a> on GitHub.</li>
+      <li>Click <b>Run workflow</b>, paste the code into <b>TikTok sign-in code</b>, then click the green <b>Run workflow</b>.</li>
+      <li>Wait about 30 seconds, then refresh <a href="./">Creator HQ</a>.</li>
+    </ol>
+  </section>
+
+  <section id="bad" hidden>
+    <h1>Sign-in <span>didn't finish</span></h1>
+    <p class="warn" id="why"></p>
+    <a class="btn ghost" href="tiktok.html">Try again</a>
+  </section>
+</main>
+<script>
+(function () {
+  'use strict';
+  var REDIRECT = 'https://alienshenanigans.github.io/hq/tiktok.html';
+  var SCOPES = 'user.info.basic,user.info.stats,video.list';
+  var q = new URLSearchParams(location.search);
+  var $ = function (id) { return document.getElementById(id); };
+  function store(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (_) {} }
+  function read(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } }
+  try { $('key').value = localStorage.getItem('tt-key') || ''; } catch (_) {}
+
+  if (q.get('code')) {
+    var expected = read('tt-state');
+    if (expected && q.get('state') !== expected) {
+      $('start').hidden = true; $('bad').hidden = false;
+      $('why').textContent = 'The sign-in came back without the check value this page sent, so it was ignored. Start again from this page.';
+    } else {
+      $('start').hidden = true; $('got').hidden = false;
+      $('code').value = q.get('code');
+    }
+    store('tt-state', null);
+    history.replaceState(null, '', location.pathname);
+  } else if (q.get('error')) {
+    $('start').hidden = true; $('bad').hidden = false;
+    $('why').textContent = 'TikTok said: ' + (q.get('error_description') || q.get('error'));
+  }
+
+  $('go').addEventListener('click', function () {
+    var key = $('key').value.trim();
+    if (!key) { $('key').focus(); return; }
+    try { localStorage.setItem('tt-key', key); } catch (_) {}
+    var state = Array.from(crypto.getRandomValues(new Uint8Array(12)), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    store('tt-state', state);
+    location.href = 'https://www.tiktok.com/v2/auth/authorize/?' + new URLSearchParams({
+      client_key: key, scope: SCOPES, response_type: 'code', redirect_uri: REDIRECT, state: state,
+    });
+  });
+  $('copy').addEventListener('click', function () {
+    $('code').select();
+    (navigator.clipboard ? navigator.clipboard.writeText($('code').value) : Promise.reject()).then(
+      function () { $('copy').textContent = 'Copied'; }, function () { document.execCommand('copy'); $('copy').textContent = 'Copied'; });
+  });
+})();
+</script>
+</body></html>
