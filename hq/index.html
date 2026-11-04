@@ -340,7 +340,41 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     'yt-views': ['YouTube total views', function () { return lastOf(data.youtube.snapshots, 'views'); }],
     'tt-followers': ['TikTok followers', function () { return lastOf(data.tiktok && data.tiktok.snapshots, 'followers'); }],
     'tt-likes': ['TikTok likes', function () { return lastOf(data.tiktok && data.tiktok.snapshots, 'likes'); }],
+    'yt-longform': ['Long-form videos posted', function (g) { return posted('l', g.set, g.by).length; }],
+    'shorts-weekly': ['Shorts every week', null],
   };
+  // YouTube uploads that are out: the permanent log from the daily refresh plus the latest list.
+  // kind 's' = Short (3 min or less), 'l' = long-form. Counts from `from` (YYYY-MM-DD) to `to`.
+  function posted(kind, from, to) {
+    var log = {};
+    var P = (data.shorts && data.shorts.posted) || {};
+    for (var id in P) log[id] = P[id];
+    (data.youtube.videos || []).forEach(function (v) {
+      if (!v.scheduled && Date.parse(v.published) <= Date.now()) log[v.id] = [v.published.slice(0, 16), v.seconds <= 180 ? 's' : 'l'];
+    });
+    return Object.keys(log).map(function (id) { return log[id]; }).filter(function (e) {
+      var d = e[0].slice(0, 10);
+      return e[1] === kind && (!from || d >= from) && (!to || d <= to);
+    });
+  }
+  // Monday (SAST) of the week holding `ms`, as YYYY-MM-DD.
+  function weekOf(ms) { var t = new Date(ms + 2 * 3600e3); t.setUTCDate(t.getUTCDate() - (t.getUTCDay() + 6) % 7); return t.toISOString().slice(0, 10); }
+  function weeklyGoal(g) {
+    var per = g.target, label = 'Shorts every week (' + per + ' a week)';
+    var counts = {};
+    posted('s', weekOf(Date.parse(g.set + 'T12:00:00Z'))).forEach(function (e) { var w = weekOf(Date.parse(e[0] + ':00Z')); counts[w] = (counts[w] || 0) + 1; });
+    var thisWeek = weekOf(Date.now()), weeks = [];
+    for (var w = weekOf(Date.parse(g.set + 'T12:00:00Z')); w <= thisWeek; w = isoDay(Date.parse(w + 'T12:00:00Z') + 7 * 864e5)) weeks.push(w);
+    var now = counts[thisWeek] || 0, done = weeks.slice(0, -1), hit = done.filter(function (x) { return (counts[x] || 0) >= per; }).length;
+    var streak = 0; for (var i = weeks.length - 1; i >= 0; i--) { var c = counts[weeks[i]] || 0; if (c >= per) streak++; else if (i < weeks.length - 1) break; }
+    var pct = Math.min(100, Math.round(now / per * 100));
+    var note = (now >= per ? 'This week done.' : (per - now) + ' more this week (weeks run Mon–Sun).') +
+      (done.length ? ' Full weeks hit: ' + hit + ' of ' + done.length + '.' : '') + (streak > 1 ? ' Streak: ' + streak + ' weeks.' : '');
+    return el('div', { class: 'goal' }, [
+      el('div', { class: 'goal-top' }, [el('b', { text: label }), el('span', { class: 'muted', text: 'this week ' + now + ' of ' + per })]),
+      el('div', { class: 'bar' + (now >= per ? ' done' : ''), role: 'progressbar', 'aria-label': label, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': pct }, [el('div', { style: 'width:' + Math.max(2, pct) + '%' })]),
+      el('div', { class: 'faint', text: note })]);
+  }
   function lastOf(snaps, k) { return snaps && snaps.length ? snaps[snaps.length - 1][k] : null; }
   function isoDay(ms) { return new Date(ms).toISOString().slice(0, 10); }
   function per1k(n, views) { return views ? (Math.round(n / views * 10000) / 10).toString() : '0'; }
@@ -392,13 +426,15 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     var goals = (data.goals || []).filter(function (g) { return GOALS[g.key]; });
     if (!goals.length) { root.appendChild(empty('No goals yet. Tell Claude your targets (for example “100 YouTube subscribers by 31 Dec”) and they show up here as progress bars.')); return; }
     goals.forEach(function (g) {
-      var cur = GOALS[g.key][1](), label = GOALS[g.key][0];
+      if (g.key === 'shorts-weekly') { root.appendChild(weeklyGoal(g)); return; }
+      var cur = GOALS[g.key][1](g), label = GOALS[g.key][0];
       if (cur == null) { root.appendChild(el('div', { class: 'goal' }, [el('div', { class: 'goal-top' }, [el('b', { text: label }), el('span', { class: 'faint', text: 'not tracked yet' })])])); return; }
       var pct = Math.min(100, Math.round(cur / g.target * 100)), left = g.target - cur, done = left <= 0;
       var note = done ? 'Reached. Time for a new goal?' : fmt.format(left) + ' to go';
       if (!done && g.by) {
         var weeks = (Date.parse(g.by + 'T23:59:59Z') - Date.now()) / (7 * 864e5);
-        note += weeks > 0 ? ' · about ' + fmt.format(Math.ceil(left / weeks)) + ' a week to make it by ' + day(g.by) : ' · the ' + day(g.by) + ' date has passed';
+        var pace = left / weeks >= 1 ? 'about ' + fmt.format(Math.ceil(left / weeks)) + ' a week' : 'about 1 every ' + Math.floor(weeks / left) + ' weeks';
+        note += weeks > 0 ? ' · ' + pace + ' to make it by ' + day(g.by) : ' · the ' + day(g.by) + ' date has passed';
       }
       var bar = el('div', { class: 'bar' + (done ? ' done' : ''), role: 'progressbar', 'aria-label': label, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': pct }, [el('div', { style: 'width:' + Math.max(2, pct) + '%' })]);
       root.appendChild(el('div', { class: 'goal' }, [
