@@ -14,6 +14,7 @@ is ever committed. The page decrypts it in the browser.
 | `YT_API_KEY` | YouTube subs, views, latest videos, trending gaming videos |
 | `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` | Twitch followers, VODs, top games |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | YouTube Analytics (watch time, % viewed, traffic sources) and Search Console |
+| `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | TikTok followers, likes, per-video stats. Connect once at /hq/tiktok.html, then run the workflow with the code it shows. |
 | `ANTHROPIC_API_KEY` | Claude writes a new take every Monday |
 
 The "Refresh Creator HQ" workflow runs daily; run it by hand from the Actions tab
