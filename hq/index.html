@@ -73,6 +73,20 @@ ol.list{margin:0;padding-left:20px;color:var(--ink-muted);font-size:15px}
 ol.list li{margin-bottom:4px}
 .empty{color:var(--ink-faint);font-size:15px;margin:0}
 .note{padding:10px 12px;background:var(--nebula);border-radius:14px;margin-bottom:8px;font-size:15px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:0 0 20px;padding:4px;background:rgba(6,6,30,.78);border:1.5px solid var(--line);border-radius:18px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:1 0 auto;padding:9px 16px;border:0;border-radius:14px;background:none;color:var(--ink-muted);font-weight:700;cursor:pointer;white-space:nowrap}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected=true]{background:var(--nebula);color:var(--ink);box-shadow:inset 0 -2px 0 var(--lavender)}
+.tabs button:focus-visible{outline:2px solid var(--lavender);outline-offset:-2px}
+@media (max-width:520px){.tabs{gap:2px}.tabs button{padding:8px 7px;font-size:14px;border-radius:12px}}
+.tile[data-go]{cursor:pointer}.tile[data-go]:hover{background:var(--glow)}
+details.fold{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+details.fold summary{cursor:pointer;font-weight:700;color:var(--lavender);list-style:none;display:flex;align-items:center;gap:8px}
+details.fold summary::-webkit-details-marker{display:none}
+details.fold summary::before{content:"";width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
+details.fold[open] summary::before{transform:rotate(45deg)}
+details.fold summary:focus-visible{outline:2px solid var(--lavender);outline-offset:2px;border-radius:6px}
 footer{margin-top:28px;font-size:14px;color:var(--ink-faint)}
 footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 [hidden]{display:none!important}
@@ -97,34 +111,50 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     <button class="btn ghost" id="lockbtn" type="button">Lock</button>
   </header>
 
-  <section class="card take" aria-labelledby="take-h">
-    <h2 id="take-h">The <span>take</span></h2>
-    <div id="take"></div>
-  </section>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" type="button" data-tab="overview">Overview</button>
+    <button role="tab" type="button" data-tab="twitch">Twitch</button>
+    <button role="tab" type="button" data-tab="youtube">YouTube</button>
+    <button role="tab" type="button" data-tab="tiktok">TikTok</button>
+    <button role="tab" type="button" data-tab="google">Google</button>
+  </nav>
 
-  <div class="tiles" id="platforms" aria-label="Platforms"></div>
+  <div class="panel" role="tabpanel" data-panel="overview">
+    <section class="card take" aria-labelledby="take-h">
+      <h2 id="take-h">The <span>take</span></h2>
+      <div id="take"></div>
+    </section>
 
-  <section class="card" aria-labelledby="streams-h">
-    <div class="row"><h2 id="streams-h" style="margin:0">Twitch <span>streams</span></h2><select id="session" aria-label="Stream session"></select></div>
-    <div id="stream"></div>
-  </section>
+    <div class="tiles" id="platforms" aria-label="Platforms"></div>
 
-  <section class="card" aria-labelledby="yta-h">
-    <h2 id="yta-h">YouTube, <span>last 28 days</span></h2>
-    <div id="yta"></div>
-  </section>
-
-  <div class="grid">
-    <section class="card" aria-labelledby="yt-h"><h2 id="yt-h">Latest on <span>YouTube</span></h2><div id="yt"></div></section>
-    <section class="card" aria-labelledby="tt-h"><h2 id="tt-h">Latest on <span>TikTok</span></h2><div id="tiktok"></div></section>
-    <section class="card" aria-labelledby="sc-h"><h2 id="sc-h">Found on <span>Google</span></h2><div id="search"></div></section>
-    <section class="card" aria-labelledby="tr-h"><h2 id="tr-h">What's <span>trending</span></h2><div id="trending"></div></section>
+    <div class="grid">
+      <section class="card" aria-labelledby="notes-h"><h2 id="notes-h">Studio <span>notes</span></h2><div id="notes"></div></section>
+      <section class="card" aria-labelledby="tr-h"><h2 id="tr-h">What's <span>trending</span></h2><div id="trending"></div></section>
+    </div>
   </div>
 
-  <section class="card" style="margin-top:20px" aria-labelledby="notes-h">
-    <h2 id="notes-h">Studio <span>notes</span></h2>
-    <div id="notes"></div>
-  </section>
+  <div class="panel" role="tabpanel" data-panel="twitch" hidden>
+    <section class="card" aria-labelledby="streams-h">
+      <div class="row"><h2 id="streams-h" style="margin:0">Twitch <span>streams</span></h2><select id="session" aria-label="Stream session"></select></div>
+      <div id="stream"></div>
+    </section>
+  </div>
+
+  <div class="panel" role="tabpanel" data-panel="youtube" hidden>
+    <section class="card" aria-labelledby="yta-h">
+      <h2 id="yta-h">YouTube, <span>last 28 days</span></h2>
+      <div id="yta"></div>
+    </section>
+    <section class="card" aria-labelledby="yt-h"><h2 id="yt-h">Latest <span>uploads</span></h2><div id="yt"></div></section>
+  </div>
+
+  <div class="panel" role="tabpanel" data-panel="tiktok" hidden>
+    <section class="card" aria-labelledby="tt-h"><h2 id="tt-h">Latest on <span>TikTok</span></h2><div id="tiktok"></div></section>
+  </div>
+
+  <div class="panel" role="tabpanel" data-panel="google" hidden>
+    <section class="card" aria-labelledby="sc-h"><h2 id="sc-h">Found on <span>Google</span></h2><div id="search"></div></section>
+  </div>
 
   <footer>
     <p>Numbers refresh every morning on their own. To add a stream, export <b>Stream Session</b> from Twitch's Stream Summary and send the CSV to Claude. Paste anything useful from YouTube or TikTok Studio's assistant to Claude too, and it goes into the next take.</p>
@@ -174,6 +204,39 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
   });
   try { var saved = localStorage.getItem(KEY); if (saved) { $('remember').checked = true; open(saved, true); } } catch (_) {}
 
+  // ---------- tabs ----------
+  var TAB_KEY = 'hq-tab';
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [data-tab]'));
+  function showTab(name, focus) {
+    if (!tabs.some(function (t) { return t.dataset.tab === name; })) name = 'overview';
+    tabs.forEach(function (t) {
+      var on = t.dataset.tab === name;
+      t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
+    });
+    document.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+    try { localStorage.setItem(TAB_KEY, name); } catch (_) {}
+    // charts measure their width, so draw them once their tab is on screen
+    if (data) requestAnimationFrame(function () { drawStreamCharts(); drawYtChart(); });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { showTab(t.dataset.tab); });
+    t.addEventListener('keydown', function (e) {
+      var j = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
+      if (j == null) return;
+      e.preventDefault(); showTab(tabs[(j + tabs.length) % tabs.length].dataset.tab, true);
+    });
+  });
+  var startTab = 'overview';
+  try { startTab = localStorage.getItem(TAB_KEY) || startTab; } catch (_) {}
+  showTab(startTab);
+  $('platforms').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-go]'); if (t) { showTab(t.dataset.go); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  });
+  $('platforms').addEventListener('keydown', function (e) {
+    var t = e.target.closest('[data-go]'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); t.click(); }
+  });
+
   // ---------- helpers ----------
   function el(tag, attrs, kids) {
     var n = document.createElement(tag);
@@ -208,7 +271,12 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     root.appendChild(el('p', { class: 'faint', style: 'margin:12px 0 0', text: [t.by, when(t.at)].filter(Boolean).join(' · ') }));
   }
 
-  function trendTile(name, snaps, field, unit) {
+  function trendTile(name, snaps, field, unit, go) {
+    var t = trendTileInner(name, snaps, field, unit);
+    if (go) { t.dataset.go = go; t.setAttribute('role', 'button'); t.tabIndex = 0; t.title = 'Open ' + go; }
+    return t;
+  }
+  function trendTileInner(name, snaps, field, unit) {
     if (!snaps || !snaps.length) return el('div', { class: 'tile off' }, [el('div', { class: 'k', text: name }), el('div', { class: 'v', text: 'Not connected yet' })]);
     var last = snaps[snaps.length - 1], d = '';
     var weekAgo = snaps.filter(function (s) { return s.date <= new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10); }).pop();
@@ -219,11 +287,11 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 
   function renderPlatforms() {
     var root = clear($('platforms'));
-    root.appendChild(trendTile('Twitch followers', data.twitch.snapshots, 'followers'));
-    root.appendChild(trendTile('YouTube subscribers', data.youtube.snapshots, 'subs'));
-    root.appendChild(trendTile('YouTube total views', data.youtube.snapshots, 'views'));
-    root.appendChild(trendTile('TikTok followers', data.tiktok && data.tiktok.snapshots, 'followers'));
-    if (data.tiktok && data.tiktok.snapshots && data.tiktok.snapshots.length) root.appendChild(trendTile('TikTok likes', data.tiktok.snapshots, 'likes', 'all time'));
+    root.appendChild(trendTile('Twitch followers', data.twitch.snapshots, 'followers', null, 'twitch'));
+    root.appendChild(trendTile('YouTube subscribers', data.youtube.snapshots, 'subs', null, 'youtube'));
+    root.appendChild(trendTile('YouTube total views', data.youtube.snapshots, 'views', null, 'youtube'));
+    root.appendChild(trendTile('TikTok followers', data.tiktok && data.tiktok.snapshots, 'followers', null, 'tiktok'));
+    if (data.tiktok && data.tiktok.snapshots && data.tiktok.snapshots.length) root.appendChild(trendTile('TikTok likes', data.tiktok.snapshots, 'likes', 'all time', 'tiktok'));
   }
 
   // ---------- streams ----------
@@ -255,10 +323,18 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     if (s.adBreaks.length) notes.push(s.adBreaks.length + ' ad breaks (' + s.adBreaks.map(function (a) { return 'min ' + a.minute; }).join(', ') + ')');
     if (s.longestQuietChat && s.longestQuietChat.minutes >= 15) notes.push('chat silent for ' + s.longestQuietChat.minutes + ' min from minute ' + s.longestQuietChat.fromMinute);
     if (notes.length) root.appendChild(el('p', { class: 'faint', style: 'margin:0 0 8px', text: 'Spotted: ' + notes.join(' · ') + '.' }));
-    root.appendChild(el('div', { class: 'chart', id: 'c-viewers' }));
-    root.appendChild(el('div', { class: 'chart', id: 'c-chat' }));
+    root.appendChild(fold('charts', 'Minute-by-minute charts', [el('div', { class: 'chart', id: 'c-viewers' }), el('div', { class: 'chart', id: 'c-chat' })], drawStreamCharts));
     drawStreamCharts();
-    if (data.twitch.sessions.length > 1) root.appendChild(sessionTable());
+    if (data.twitch.sessions.length > 1) root.appendChild(fold('streams', 'All streams (' + data.twitch.sessions.length + ')', [sessionTable()]));
+  }
+
+  // Folded sections remember whether they were open while you flip between streams.
+  var folds = {};
+  function fold(key, title, kids, onOpen) {
+    var d = el('details', { class: 'fold' }, [el('summary', { text: title })].concat(kids));
+    d.open = !!folds[key];
+    d.addEventListener('toggle', function () { folds[key] = d.open; if (d.open && onOpen) onOpen(); });
+    return d;
   }
 
   function sessionTable() {
@@ -268,7 +344,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
         return el('td', { class: cols[i][1] || '', text: String(v) });
       }));
     });
-    return el('div', { class: 'scroll', style: 'margin-top:16px' }, [el('table', null, [
+    return el('div', { class: 'scroll', style: 'margin-top:10px' }, [el('table', null, [
       el('thead', null, [el('tr', null, cols.map(function (c) { return el('th', { class: c[1] || '', text: c[0] }); }))]),
       el('tbody', null, rows)])]);
   }
