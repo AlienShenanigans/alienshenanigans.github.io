@@ -12,7 +12,8 @@
 //   node tools/hq/hq.mjs rekey          re-encrypts with NEW_HQ_PASSWORD
 //   node tools/hq/hq.mjs short-link <youtubeId> <tiktokId|none|auto>   fixes a wrong Shorts match
 //   node tools/hq/hq.mjs short-tag <youtubeId|tiktokId> [--game "Slender"] [--hook "said I felt safe"] [--grade A] [--desk <deskId>]
-//   node tools/hq/hq.mjs goal <key> <target|off> [--by YYYY-MM-DD]   keys: twitch-followers, yt-subs, yt-views, tt-followers, tt-likes
+//   node tools/hq/hq.mjs goal <key> <target|off> [--by YYYY-MM-DD]   keys: twitch-followers, yt-subs, yt-views, tt-followers, tt-likes,
+//                                     yt-longform (long videos posted from today), shorts-weekly (Shorts per week)
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { load, save, upsert } from './vault.mjs';
@@ -293,6 +294,11 @@ function trackShorts(data, now = new Date()) {
     if (h.length > 40) h.splice(0, h.length - 40);
   };
   for (const v of data.youtube.videos || []) if (v.seconds <= 180) add('yt:' + v.id, v);
+  // Permanent posting log (never trimmed), so weekly posting goals still count once videos fall out of the latest 25.
+  sh.posted ??= {};
+  for (const v of data.youtube.videos || []) {
+    if (!v.scheduled && new Date(v.published) <= now) sh.posted[v.id] = [v.published.slice(0, 16), v.seconds <= 180 ? 's' : 'l'];
+  }
   for (const v of data.tiktok?.videos || []) add('tt:' + v.id, v);
   // forget videos nobody has seen for 120 days
   const cutoff = new Date(now - 120 * 864e5).toISOString();
@@ -398,7 +404,7 @@ const commands = {
     console.log(id, t);
   },
   async goal() {
-    const KEYS = ['twitch-followers', 'yt-subs', 'yt-views', 'tt-followers', 'tt-likes'];
+    const KEYS = ['twitch-followers', 'yt-subs', 'yt-views', 'tt-followers', 'tt-likes', 'yt-longform', 'shorts-weekly'];
     const [key, target] = rest;
     if (!KEYS.includes(key) || !target) throw new Error(`Usage: goal <${KEYS.join('|')}> <target|off> [--by YYYY-MM-DD]`);
     const data = await load();
