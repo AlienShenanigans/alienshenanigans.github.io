@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Creator HQ</title>
+<meta name="theme-color" content="#0c0624">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Quicksand:wght@500;600;700&display=swap">
+<style>
+:root{
+  --void:#0c0624;--nebula:#1e123c;--glow:#3a2266;--panel:#06061e;
+  --ink:#f5f1fa;--ink-muted:#b8b0d4;--ink-faint:#7f78a3;--lavender:#c898f0;--lavender-soft:#9690cc;
+  --gold:#e8c47a;--line:rgba(150,144,204,.22);--good:#7fd6a4;--warn:#f0b36b;
+  --display:"Sora",system-ui,sans-serif;--sans:"Quicksand",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(900px 600px at 85% 105%,var(--glow),transparent 60%),radial-gradient(700px 500px at 0% 0%,var(--nebula),transparent 70%),var(--void);background-attachment:fixed;color:var(--ink);font:500 16px/1.5 var(--sans)}
+h1,h2,h3{font-family:var(--display);margin:0}
+h1{font-size:1.75rem;letter-spacing:-.3px}
+h1 span,h2 span{color:var(--lavender)}
+h2{font-size:1.2rem;margin-bottom:12px}
+a{color:var(--lavender)}
+button,input,select{font:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:32px 16px 48px}
+.muted{color:var(--ink-muted)}
+.faint{color:var(--ink-faint);font-size:14px}
+
+/* lock */
+#lock{min-height:100vh;display:grid;place-items:center;padding:16px}
+#lock form{width:100%;max-width:360px;text-align:center;padding:28px 22px;background:rgba(6,6,30,.8);border:1.5px solid var(--lavender-soft);border-radius:28px}
+#lock img{width:84px;height:84px;border-radius:50%;border:3px solid var(--lavender-soft);margin-bottom:12px}
+#lock input[type=password]{width:100%;margin:18px 0 10px;padding:12px 14px;border-radius:14px;border:1.5px solid var(--lavender-soft);background:var(--panel);color:var(--ink)}
+#lock input:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--lavender);outline-offset:2px}
+#lock label{display:flex;gap:8px;justify-content:center;align-items:center;font-size:14px;color:var(--ink-muted)}
+.btn{display:inline-block;margin-top:14px;padding:11px 22px;border-radius:14px;border:0;background:var(--gold);color:var(--void);font-weight:700;cursor:pointer}
+.btn:hover{background:#fcf6d2}
+.btn.ghost{background:none;border:1.5px solid var(--lavender-soft);color:var(--ink);margin:0;padding:6px 14px;font-size:14px}
+#err{min-height:1.5em;margin:10px 0 0;color:var(--warn);font-size:14px}
+
+/* dashboard */
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px}
+.card{padding:20px;background:rgba(6,6,30,.78);border:1.5px solid var(--line);border-radius:24px;margin-bottom:20px;min-width:0}
+.grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.grid>.card{margin-bottom:0}
+.take{border-color:var(--lavender-soft)}
+.take .headline{font:600 1.15rem/1.4 var(--display);margin:4px 0 16px}
+.take-cols{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.take h3{font-size:.95rem;margin-bottom:6px}
+.take ul{margin:0;padding-left:18px;color:var(--ink-muted);font-size:15px}
+.take li{margin-bottom:6px}
+.take .wins h3{color:var(--good)}.take .worries h3{color:var(--warn)}.take .next h3{color:var(--gold)}.take .trend h3{color:var(--lavender)}
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:20px}
+.tile{padding:14px 16px;background:var(--nebula);border-radius:18px}
+.tile .k{font-size:13px;color:var(--ink-muted);font-weight:600}
+.tile .v{font:700 1.6rem/1.2 var(--display);margin-top:2px}
+.tile .d{font-size:13px;color:var(--ink-faint)}
+.tile.off .v{font-size:1rem;color:var(--ink-faint);font-family:var(--sans)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+select{padding:6px 10px;border-radius:12px;border:1.5px solid var(--lavender-soft);background:var(--panel);color:var(--ink);max-width:100%}
+.chart{position:relative;margin-top:8px}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart .lbl{font-size:13px;color:var(--ink-muted);font-weight:600}
+.tip{position:absolute;pointer-events:none;padding:6px 10px;background:var(--panel);border:1.5px solid var(--lavender-soft);border-radius:10px;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:2}
+.tip b{font-family:var(--display)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--ink-muted);font-weight:600;padding:6px 8px;border-bottom:1.5px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+.pill{display:inline-block;padding:0 8px;border-radius:999px;background:var(--nebula);font-size:12px;font-weight:700;color:var(--ink-muted)}
+ol.list{margin:0;padding-left:20px;color:var(--ink-muted);font-size:15px}
+ol.list li{margin-bottom:4px}
+.empty{color:var(--ink-faint);font-size:15px;margin:0}
+.note{padding:10px 12px;background:var(--nebula);border-radius:14px;margin-bottom:8px;font-size:15px}
+footer{margin-top:28px;font-size:14px;color:var(--ink-faint)}
+footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
+[hidden]{display:none!important}
+</style></head><body>
+
+<div id="lock">
+  <form id="lockform" autocomplete="on">
+    <img src="../avatar.jpg" alt="">
+    <h1>Creator <span>HQ</span></h1>
+    <p class="muted" style="margin:6px 0 0">Private. Enter your password.</p>
+    <input type="text" name="username" value="ali" autocomplete="username" hidden>
+    <input id="pw" type="password" autocomplete="current-password" aria-label="Password" required>
+    <label><input id="remember" type="checkbox"> Remember on this device</label>
+    <button class="btn" type="submit">Open</button>
+    <p id="err" role="alert"></p>
+  </form>
+</div>
+
+<div id="app" class="wrap" hidden>
+  <header>
+    <div><h1>Creator <span>HQ</span></h1><div class="faint" id="updated"></div></div>
+    <button class="btn ghost" id="lockbtn" type="button">Lock</button>
+  </header>
+
+  <section class="card take" aria-labelledby="take-h">
+    <h2 id="take-h">The <span>take</span></h2>
+    <div id="take"></div>
+  </section>
+
+  <div class="tiles" id="platforms" aria-label="Platforms"></div>
+
+  <section class="card" aria-labelledby="streams-h">
+    <div class="row"><h2 id="streams-h" style="margin:0">Twitch <span>streams</span></h2><select id="session" aria-label="Stream session"></select></div>
+    <div id="stream"></div>
+  </section>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="yt-h"><h2 id="yt-h">Latest on <span>YouTube</span></h2><div id="yt"></div></section>
+    <section class="card" aria-labelledby="tr-h"><h2 id="tr-h">What's <span>trending</span></h2><div id="trending"></div></section>
+  </div>
+
+  <section class="card" style="margin-top:20px" aria-labelledby="notes-h">
+    <h2 id="notes-h">Studio <span>notes</span></h2>
+    <div id="notes"></div>
+  </section>
+
+  <footer>
+    <p>Numbers refresh every morning on their own. To add a stream, export <b>Stream Session</b> from Twitch's Stream Summary and send the CSV to Claude. Paste anything useful from YouTube or TikTok Studio's assistant to Claude too, and it goes into the next take.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'hq-pw';
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = new Intl.NumberFormat('en-GB');
+  var data = null;
+
+  function unb64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
+
+  async function decrypt(pw) {
+    var res = await fetch('data.enc', { cache: 'no-store' });
+    if (!res.ok) throw new Error('No data file yet.');
+    var box = await res.json();
+    var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: unb64(box.salt), iterations: box.iter },
+      base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    var plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(box.iv) }, key, unb64(box.ct));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+
+  async function open(pw, remember) {
+    $('err').textContent = 'Opening…';
+    try {
+      data = await decrypt(pw);
+    } catch (e) {
+      $('err').textContent = e.name === 'OperationError' ? 'That password didn’t work.' : 'Couldn’t load: ' + e.message;
+      try { localStorage.removeItem(KEY); } catch (_) {}
+      return;
+    }
+    if (remember) { try { localStorage.setItem(KEY, pw); } catch (_) {} }
+    $('err').textContent = '';
+    $('lock').hidden = true; $('app').hidden = false;
+    render();
+  }
+
+  $('lockform').addEventListener('submit', function (e) { e.preventDefault(); open($('pw').value, $('remember').checked); });
+  $('lockbtn').addEventListener('click', function () {
+    try { localStorage.removeItem(KEY); } catch (_) {}
+    data = null; $('app').hidden = true; $('lock').hidden = false; $('pw').value = '';
+  });
+  try { var saved = localStorage.getItem(KEY); if (saved) { $('remember').checked = true; open(saved, true); } } catch (_) {}
+
+  // ---------- helpers ----------
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) { if (k === 'class') n.className = attrs[k]; else if (k === 'text') n.textContent = attrs[k]; else n.setAttribute(k, attrs[k]); }
+    (kids || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return n;
+  }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); return n; }
+  function when(iso) {
+    if (!iso) return '';
+    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+  }
+  function day(iso) { return new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(iso.length === 10 ? iso + 'T12:00:00Z' : iso)); }
+  function empty(text) { return el('p', { class: 'empty', text: text }); }
+
+  function render() {
+    $('updated').textContent = data.updatedAt ? 'Data updated ' + when(data.updatedAt) : '';
+    renderTake(); renderPlatforms(); renderSessions(); renderYouTube(); renderTrending(); renderNotes();
+  }
+
+  function renderTake() {
+    var t = data.take, root = clear($('take'));
+    if (!t) { root.appendChild(empty('No take yet.')); return; }
+    root.appendChild(el('p', { class: 'headline', text: t.headline || '' }));
+    var cols = el('div', { class: 'take-cols' });
+    [['wins', 'Working', 'wins'], ['worries', 'Not working', 'worries'], ['next', 'Do this week', 'next'], ['trending', 'Trends', 'trend']].forEach(function (c) {
+      var items = t[c[0]] || [];
+      if (!items.length) return;
+      cols.appendChild(el('div', { class: c[2] }, [el('h3', { text: c[1] }), el('ul', null, items.map(function (i) { return el('li', { text: i }); }))]));
+    });
+    root.appendChild(cols);
+    root.appendChild(el('p', { class: 'faint', style: 'margin:12px 0 0', text: [t.by, when(t.at)].filter(Boolean).join(' · ') }));
+  }
+
+  function trendTile(name, snaps, field, unit) {
+    if (!snaps || !snaps.length) return el('div', { class: 'tile off' }, [el('div', { class: 'k', text: name }), el('div', { class: 'v', text: 'Not connected yet' })]);
+    var last = snaps[snaps.length - 1], d = '';
+    var weekAgo = snaps.filter(function (s) { return s.date <= new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10); }).pop();
+    if (weekAgo) { var diff = last[field] - weekAgo[field]; d = (diff >= 0 ? '+' : '') + fmt.format(diff) + ' in 7 days'; }
+    else d = 'since ' + day(snaps[0].date) + ': tracking started';
+    return el('div', { class: 'tile' }, [el('div', { class: 'k', text: name }), el('div', { class: 'v', text: fmt.format(last[field]) }), el('div', { class: 'd', text: (unit ? unit + ' · ' : '') + d })]);
+  }
+
+  function renderPlatforms() {
+    var root = clear($('platforms'));
+    root.appendChild(trendTile('Twitch followers', data.twitch.snapshots, 'followers'));
+    root.appendChild(trendTile('YouTube subscribers', data.youtube.snapshots, 'subs'));
+    root.appendChild(trendTile('YouTube total views', data.youtube.snapshots, 'views'));
+    root.appendChild(el('div', { class: 'tile off' }, [el('div', { class: 'k', text: 'TikTok' }), el('div', { class: 'v', text: 'Coming next' })]));
+  }
+
+  // ---------- streams ----------
+  function renderSessions() {
+    var sel = clear($('session')), sessions = data.twitch.sessions.slice().reverse();
+    if (!sessions.length) { sel.hidden = true; clear($('stream')).appendChild(empty('No streams yet. Send Claude a Stream Session CSV from Twitch.')); return; }
+    sessions.forEach(function (s, i) { sel.appendChild(el('option', { value: i, text: day(s.date) + (s.game ? ' · ' + s.game : '') })); });
+    sel.onchange = function () { renderStream(sessions[+sel.value]); };
+    renderStream(sessions[0]);
+  }
+
+  var current = null;
+  function renderStream(s) {
+    current = s;
+    var root = clear($('stream'));
+    var prev = data.twitch.sessions.filter(function (x) { return x.id < s.id; });
+    var avgPrev = prev.length ? prev.reduce(function (a, x) { return a + x.avgViewers; }, 0) / prev.length : null;
+    function tile(k, v, d) { return el('div', { class: 'tile' }, [el('div', { class: 'k', text: k }), el('div', { class: 'v', text: v }), d ? el('div', { class: 'd', text: d }) : null]); }
+    var h = Math.floor(s.minutes / 60), m = s.minutes % 60;
+    root.appendChild(el('div', { class: 'tiles', style: 'margin-bottom:8px' }, [
+      tile('Avg viewers', String(s.avgViewers), avgPrev == null ? 'first stream tracked' : 'vs ' + (Math.round(avgPrev * 10) / 10) + ' before'),
+      tile('Peak viewers', String(s.peakViewers)),
+      tile('Length', h + 'h ' + (m ? m + 'm' : ''), s.start + '–' + s.end + ' SAST'),
+      tile('Chat messages', fmt.format(s.chatMessages), 'up to ' + s.peakChatters + ' chatters'),
+      tile('New followers', String(s.newFollowers), s.liveViews + ' live views'),
+      tile('Clips', String(s.clips), s.clipViews + ' clip views'),
+    ]));
+    var notes = [];
+    if (s.adBreaks.length) notes.push(s.adBreaks.length + ' ad breaks (' + s.adBreaks.map(function (a) { return 'min ' + a.minute; }).join(', ') + ')');
+    if (s.longestQuietChat && s.longestQuietChat.minutes >= 15) notes.push('chat silent for ' + s.longestQuietChat.minutes + ' min from minute ' + s.longestQuietChat.fromMinute);
+    if (notes.length) root.appendChild(el('p', { class: 'faint', style: 'margin:0 0 8px', text: 'Spotted: ' + notes.join(' · ') + '.' }));
+    root.appendChild(el('div', { class: 'chart', id: 'c-viewers' }));
+    root.appendChild(el('div', { class: 'chart', id: 'c-chat' }));
+    drawStreamCharts();
+    if (data.twitch.sessions.length > 1) root.appendChild(sessionTable());
+  }
+
+  function sessionTable() {
+    var cols = [['Stream', null], ['Game', null], ['Avg', 'n'], ['Peak', 'n'], ['Chat', 'n'], ['Follows', 'n'], ['Mins', 'n']];
+    var rows = data.twitch.sessions.slice().reverse().map(function (s) {
+      return el('tr', null, [day(s.date), s.game || '—', s.avgViewers, s.peakViewers, s.chatMessages, s.newFollowers, s.minutes].map(function (v, i) {
+        return el('td', { class: cols[i][1] || '', text: String(v) });
+      }));
+    });
+    return el('div', { class: 'scroll', style: 'margin-top:16px' }, [el('table', null, [
+      el('thead', null, [el('tr', null, cols.map(function (c) { return el('th', { class: c[1] || '', text: c[0] }); }))]),
+      el('tbody', null, rows)])]);
+  }
+
+  // One chart per measure, sharing the same minute axis (never two y-scales on one chart).
+  function drawStreamCharts() {
+    if (!current) return;
+    var s = current;
+    lineChart($('c-viewers'), 'Viewers per minute', s, 1, 'var(--lavender)', 'line', 'viewers');
+    lineChart($('c-chat'), 'Chat messages per minute', s, 2, 'var(--gold)', 'bar', 'messages');
+  }
+
+  function lineChart(host, title, s, col, color, kind, unit) {
+    clear(host);
+    var NS = 'http://www.w3.org/2000/svg';
+    var W = Math.max(280, host.clientWidth || 600), H = 150, pad = { l: 28, r: 8, t: 10, b: 22 };
+    var pts = s.series, n = pts.length, maxY = Math.max(1, Math.max.apply(null, pts.map(function (p) { return p[col]; })));
+    maxY = Math.ceil(maxY);
+    var x = function (i) { return pad.l + (W - pad.l - pad.r) * (n === 1 ? 0 : i / (n - 1)); };
+    var y = function (v) { return pad.t + (H - pad.t - pad.b) * (1 - v / maxY); };
+    function sv(tag, a) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); return e; }
+    host.appendChild(el('div', { class: 'lbl', text: title }));
+    var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, height: H, role: 'img', 'aria-label': title });
+    // gridlines + y labels
+    var ticks = maxY <= 4 ? Array.from({ length: maxY + 1 }, function (_, i) { return i; }) : [0, Math.round(maxY / 2), maxY];
+    ticks.forEach(function (t) {
+      svg.appendChild(sv('line', { x1: pad.l, x2: W - pad.r, y1: y(t), y2: y(t), stroke: 'rgba(150,144,204,.18)', 'stroke-width': 1 }));
+      var tx = sv('text', { x: pad.l - 8, y: y(t) + 4, 'text-anchor': 'end', fill: '#7f78a3', 'font-size': 11 }); tx.textContent = t; svg.appendChild(tx);
+    });
+    // x labels every 30 minutes
+    for (var i = 0; i < n; i += 30) {
+      var tx2 = sv('text', { x: x(i), y: H - 6, 'text-anchor': i === 0 ? 'start' : 'middle', fill: '#7f78a3', 'font-size': 11 });
+      tx2.textContent = pts[i][0]; svg.appendChild(tx2);
+    }
+    // ad breaks
+    pts.forEach(function (p, i) {
+      if (!p[3]) return;
+      svg.appendChild(sv('line', { x1: x(i), x2: x(i), y1: pad.t, y2: H - pad.b, stroke: '#f0b36b', 'stroke-width': 1.5, 'stroke-dasharray': '3 4', opacity: .8 }));
+      if (col === 1) { var at = sv('text', { x: x(i) + 4, y: pad.t + 10, fill: '#f0b36b', 'font-size': 11, 'font-weight': 700 }); at.textContent = 'Ad'; svg.appendChild(at); }
+    });
+    if (kind === 'line') {
+      var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p[col]).toFixed(1); }).join(' ');
+      svg.appendChild(sv('path', { d: d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+    } else {
+      var bw = Math.max(1, (W - pad.l - pad.r) / n - 1);
+      pts.forEach(function (p, i) {
+        if (!p[col]) return;
+        svg.appendChild(sv('rect', { x: x(i) - bw / 2, y: y(p[col]), width: bw, height: y(0) - y(p[col]), fill: color, rx: Math.min(2, bw / 2) }));
+      });
+    }
+    // hover
+    var cross = sv('line', { y1: pad.t, y2: H - pad.b, stroke: '#b8b0d4', 'stroke-width': 1, opacity: 0 });
+    var dot = sv('circle', { r: 4.5, fill: color, stroke: '#06061e', 'stroke-width': 2, opacity: 0 });
+    svg.appendChild(cross); svg.appendChild(dot);
+    var hit = sv('rect', { x: pad.l, y: 0, width: W - pad.l - pad.r, height: H, fill: 'transparent' });
+    svg.appendChild(hit);
+    host.appendChild(svg);
+    var tip = el('div', { class: 'tip' }); host.appendChild(tip);
+    function move(clientX) {
+      var r = svg.getBoundingClientRect(), px = (clientX - r.left) * (W / r.width);
+      var i = Math.max(0, Math.min(n - 1, Math.round((px - pad.l) / (W - pad.l - pad.r) * (n - 1))));
+      var p = pts[i];
+      cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('opacity', .6);
+      dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(p[col])); dot.setAttribute('opacity', 1);
+      clear(tip).appendChild(el('b', { text: String(p[col]) + ' ' + unit }));
+      tip.appendChild(document.createTextNode(' · ' + p[0] + ' (min ' + i + ')' + (p[3] ? ' · ad ' + p[3] + 's' : '')));
+      tip.style.opacity = 1;
+      var left = x(i) * (r.width / W) + 12, tw = tip.offsetWidth;
+      if (left + tw > r.width) left = x(i) * (r.width / W) - tw - 12;
+      tip.style.left = Math.max(0, left) + 'px'; tip.style.top = '18px';
+    }
+    function leave() { tip.style.opacity = 0; cross.setAttribute('opacity', 0); dot.setAttribute('opacity', 0); }
+    hit.addEventListener('pointermove', function (e) { move(e.clientX); });
+    hit.addEventListener('pointerdown', function (e) { move(e.clientX); });
+    hit.addEventListener('pointerleave', leave);
+  }
+
+  var rt;
+  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(drawStreamCharts, 120); });
+
+  // ---------- YouTube ----------
+  function renderYouTube() {
+    var root = clear($('yt')), vids = data.youtube.videos || [];
+    if (!vids.length) { root.appendChild(empty('Switches on once the YouTube API key is added.')); return; }
+    var rows = vids.slice(0, 12).map(function (v) {
+      var a = el('a', { href: 'https://youtu.be/' + v.id, target: '_blank', rel: 'noopener', text: v.title });
+      return el('tr', null, [
+        el('td', null, [a, ' ', el('span', { class: 'pill', text: v.seconds <= 180 ? 'Short' : 'Video' }), v.scheduled ? el('span', { class: 'pill', text: 'Scheduled' }) : null]),
+        el('td', { class: 'n', text: day(v.published) }),
+        el('td', { class: 'n', text: fmt.format(v.views) }),
+        el('td', { class: 'n', text: fmt.format(v.likes) }),
+      ]);
+    });
+    root.appendChild(el('div', { class: 'scroll' }, [el('table', null, [
+      el('thead', null, [el('tr', null, [el('th', { text: 'Title' }), el('th', { class: 'n', text: 'Out' }), el('th', { class: 'n', text: 'Views' }), el('th', { class: 'n', text: 'Likes' })])]),
+      el('tbody', null, rows)])]));
+  }
+
+  function renderTrending() {
+    var root = clear($('trending')), t = data.trending || {};
+    if (!t.twitchTopGames && !t.youtubeGaming) { root.appendChild(empty('Switches on once the YouTube and Twitch keys are added.')); return; }
+    if (t.twitchTopGames) {
+      root.appendChild(el('h3', { style: 'font-size:.95rem;margin:0 0 6px', text: 'Top games on Twitch now' }));
+      root.appendChild(el('ol', { class: 'list' }, t.twitchTopGames.items.slice(0, 10).map(function (g) { return el('li', { text: g }); })));
+    }
+    if (t.youtubeGaming) {
+      root.appendChild(el('h3', { style: 'font-size:.95rem;margin:16px 0 6px', text: 'Trending gaming on YouTube (' + t.youtubeGaming.region + ')' }));
+      root.appendChild(el('ol', { class: 'list' }, t.youtubeGaming.items.slice(0, 8).map(function (v) {
+        return el('li', null, [el('a', { href: 'https://youtu.be/' + v.id, target: '_blank', rel: 'noopener', text: v.title }), el('span', { class: 'faint', text: ' · ' + v.channel })]);
+      })));
+    }
+  }
+
+  function renderNotes() {
+    var root = clear($('notes')), notes = (data.notes || []).slice().reverse();
+    if (!notes.length) { root.appendChild(empty('Nothing yet. When YouTube or TikTok Studio’s assistant says something useful, paste it to Claude and it lands here and in the next take.')); return; }
+    notes.slice(0, 8).forEach(function (nt) {
+      root.appendChild(el('div', { class: 'note' }, [el('div', { class: 'faint', text: [nt.from, when(nt.at)].filter(Boolean).join(' · ') }), el('div', { text: nt.text })]));
+    });
+  }
+})();
+</script>
+</body></html>
