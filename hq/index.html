@@ -79,7 +79,7 @@ ol.list li{margin-bottom:4px}
 .tabs button:hover{color:var(--ink)}
 .tabs button[aria-selected=true]{background:var(--nebula);color:var(--ink);box-shadow:inset 0 -2px 0 var(--lavender)}
 .tabs button:focus-visible{outline:2px solid var(--lavender);outline-offset:-2px}
-@media (max-width:520px){.tabs{gap:2px}.tabs button{padding:8px 7px;font-size:14px;border-radius:12px}}
+@media (max-width:520px){.tabs{gap:0;padding:3px}.tabs button{flex:1 1 auto;padding:8px 4px;font-size:13.5px;border-radius:12px}}
 .tile[data-go]{cursor:pointer}.tile[data-go]:hover{background:var(--glow)}
 details.fold{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
 details.fold summary{cursor:pointer;font-weight:700;color:var(--lavender);list-style:none;display:flex;align-items:center;gap:8px}
@@ -87,6 +87,38 @@ details.fold summary::-webkit-details-marker{display:none}
 details.fold summary::before{content:"";width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
 details.fold[open] summary::before{transform:rotate(45deg)}
 details.fold summary:focus-visible{outline:2px solid var(--lavender);outline-offset:2px;border-radius:6px}
+/* shorts: one row per clip, YouTube vs TikTok side by side */
+.sh{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr) 92px;gap:10px 14px;padding:14px 0;border-bottom:1px solid var(--line);align-items:start}
+.sh:last-child{border-bottom:0}
+.sh-t a{font-weight:700;text-decoration:none;color:var(--ink)}.sh-t a:hover{color:var(--lavender);text-decoration:underline}
+.sh-t .cap{font-size:13px;color:var(--ink-muted);margin-top:2px;overflow-wrap:anywhere}
+.sh-t .meta{font-size:13px;color:var(--ink-faint);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.sh-p{padding:8px 10px;border-radius:14px;background:var(--nebula);min-width:0}
+.sh-p .k{font-size:12px;font-weight:700;color:var(--ink-muted)}
+.sh-p.yt .k::before,.sh-p.tt .k::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--lavender)}
+.sh-p.tt .k::before{background:var(--gold)}
+.sh-p .v{font:700 1.25rem/1.2 var(--display)}
+.sh-p .d{font-size:12.5px;color:var(--ink-faint);overflow-wrap:anywhere}
+.sh-p.none .v{font:600 .9rem/1.4 var(--sans);color:var(--ink-faint)}
+.sh-p.won{box-shadow:inset 0 0 0 1.5px var(--lavender-soft)}
+.sh-w{text-align:right;font-size:13px}
+.sh-w b{display:block;font-family:var(--display)}
+.sh-w .yt{color:var(--lavender)}.sh-w .tt{color:var(--gold)}
+.pill.manual{background:none;border:1px solid var(--line)}
+@media (max-width:700px){.sh{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.sh-t{grid-column:1/-1}.sh-w{grid-column:1/-1;text-align:left;display:flex;gap:6px;align-items:baseline}.sh-w b{display:inline}}
+/* clip leads */
+.leads{margin:4px 0 4px;padding:12px 14px;background:var(--nebula);border-radius:18px}
+.leads h3{font-size:.95rem;margin:0 0 6px}
+.leads ol{margin:0;padding-left:20px;font-size:15px}
+.leads li{margin-bottom:4px}
+.leads li span{color:var(--ink-muted)}
+/* goals */
+.goal{margin-bottom:14px}
+.goal-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px;font-size:15px}
+.goal-top b{font-family:var(--display)}
+.bar{height:10px;border-radius:5px;background:var(--nebula);margin:5px 0 3px;overflow:hidden}
+.bar>div{height:100%;border-radius:5px;background:var(--lavender)}
+.bar.done>div{background:var(--good)}
 footer{margin-top:28px;font-size:14px;color:var(--ink-faint)}
 footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 [hidden]{display:none!important}
@@ -113,6 +145,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button role="tab" type="button" data-tab="overview">Overview</button>
+    <button role="tab" type="button" data-tab="shorts">Shorts</button>
     <button role="tab" type="button" data-tab="twitch">Twitch</button>
     <button role="tab" type="button" data-tab="youtube">YouTube</button>
     <button role="tab" type="button" data-tab="tiktok">TikTok</button>
@@ -127,10 +160,16 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 
     <div class="tiles" id="platforms" aria-label="Platforms"></div>
 
+    <section class="card" aria-labelledby="goals-h"><h2 id="goals-h">Growth &amp; <span>goals</span></h2><div id="goals"></div></section>
+
     <div class="grid">
       <section class="card" aria-labelledby="notes-h"><h2 id="notes-h">Studio <span>notes</span></h2><div id="notes"></div></section>
       <section class="card" aria-labelledby="tr-h"><h2 id="tr-h">What's <span>trending</span></h2><div id="trending"></div></section>
     </div>
+  </div>
+
+  <div class="panel" role="tabpanel" data-panel="shorts" hidden>
+    <section class="card" aria-labelledby="sh-h"><h2 id="sh-h">Same clip, <span>every platform</span></h2><div id="shorts"></div></section>
   </div>
 
   <div class="panel" role="tabpanel" data-panel="twitch" hidden>
@@ -254,7 +293,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 
   function render() {
     $('updated').textContent = data.updatedAt ? 'Data updated ' + when(data.updatedAt) : '';
-    renderTake(); renderPlatforms(); renderSessions(); renderYouTubeAnalytics(); renderYouTube(); renderTikTok(); renderSearch(); renderTrending(); renderNotes();
+    renderTake(); renderPlatforms(); renderGoals(); renderShorts(); renderSessions(); renderYouTubeAnalytics(); renderYouTube(); renderTikTok(); renderSearch(); renderTrending(); renderNotes();
   }
 
   function renderTake() {
@@ -294,6 +333,259 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     if (data.tiktok && data.tiktok.snapshots && data.tiktok.snapshots.length) root.appendChild(trendTile('TikTok likes', data.tiktok.snapshots, 'likes', 'all time', 'tiktok'));
   }
 
+  // ---------- growth & goals ----------
+  var GOALS = {
+    'twitch-followers': ['Twitch followers', function () { return lastOf(data.twitch.snapshots, 'followers'); }],
+    'yt-subs': ['YouTube subscribers', function () { return lastOf(data.youtube.snapshots, 'subs'); }],
+    'yt-views': ['YouTube total views', function () { return lastOf(data.youtube.snapshots, 'views'); }],
+    'tt-followers': ['TikTok followers', function () { return lastOf(data.tiktok && data.tiktok.snapshots, 'followers'); }],
+    'tt-likes': ['TikTok likes', function () { return lastOf(data.tiktok && data.tiktok.snapshots, 'likes'); }],
+  };
+  function lastOf(snaps, k) { return snaps && snaps.length ? snaps[snaps.length - 1][k] : null; }
+  function isoDay(ms) { return new Date(ms).toISOString().slice(0, 10); }
+  function per1k(n, views) { return views ? (Math.round(n / views * 10000) / 10).toString() : '0'; }
+
+  // YouTube: from the daily Analytics rows of the last 28 days.
+  function ytConversion() {
+    var L = data.youtube.last28, daily = data.youtube.daily || [];
+    if (!L) return null;
+    var days = daily.filter(function (d) { return d.day >= L.from && d.day <= L.to; });
+    var views = days.reduce(function (a, d) { return a + d.views; }, 0), subs = days.reduce(function (a, d) { return a + d.subscribersGained; }, 0);
+    return { views: views, gained: subs, from: L.from, to: L.to };
+  }
+  // TikTok has no "views in a period" number, so add up each video's growth from its daily snapshots.
+  function ttConversion() {
+    var snaps = (data.tiktok && data.tiktok.snapshots) || [], vids = (data.tiktok && data.tiktok.videos) || [];
+    var H = (data.shorts && data.shorts.history) || {};
+    var keys = Object.keys(H).filter(function (k) { return k.indexOf('tt:') === 0 && H[k].length; });
+    if (!snaps.length || !keys.length) return null;
+    var tracked = keys.map(function (k) { return H[k][0][0].slice(0, 10); }).sort()[0];
+    var start = [isoDay(Date.now() - 28 * 864e5), tracked, snaps[0].date].sort().pop();
+    var s0 = snaps.filter(function (x) { return x.date <= start; }).pop() || snaps.filter(function (x) { return x.date >= start; })[0];
+    var s1 = snaps[snaps.length - 1];
+    if (!s0 || s1.date <= s0.date) return { since: tracked };
+    var views = 0;
+    vids.forEach(function (v) {
+      var h = H['tt:' + v.id] || [];
+      var before = h.filter(function (e) { return e[0].slice(0, 10) <= s0.date; }).pop();
+      var base = before ? before[1] : (v.published.slice(0, 10) >= s0.date ? 0 : (h[0] ? h[0][1] : v.views));
+      views += Math.max(0, v.views - base);
+    });
+    return { views: views, gained: s1.followers - s0.followers, from: s0.date, to: s1.date };
+  }
+
+  function renderGoals() {
+    var root = clear($('goals'));
+    function tile(k, v, d) { return el('div', { class: 'tile' }, [el('div', { class: 'k', text: k }), el('div', { class: 'v', text: v }), d ? el('div', { class: 'd', text: d }) : null]); }
+    var tiles = el('div', { class: 'tiles', style: 'margin-bottom:16px' });
+    var y = ytConversion(), t = ttConversion();
+    tiles.appendChild(y ? tile('YouTube: subs per 1,000 views', per1k(y.gained, y.views), y.gained + ' gained from ' + fmt.format(y.views) + ' views · last 28 days')
+      : tile('YouTube: subs per 1,000 views', '—', 'switches on with the Google sign-in'));
+    if (!t) tiles.appendChild(tile('TikTok: followers per 1,000 views', '—', 'switches on once TikTok is tracked'));
+    else if (t.views == null) tiles.appendChild(tile('TikTok: followers per 1,000 views', '—', 'tracking started ' + day(t.since) + ': needs a couple of days'));
+    else {
+      var n = Math.round((Date.parse(t.to) - Date.parse(t.from)) / 864e5);
+      tiles.appendChild(tile('TikTok: followers per 1,000 views', per1k(t.gained, t.views), (t.gained >= 0 ? '+' : '') + t.gained + ' from ' + fmt.format(t.views) + ' views · ' + (n >= 27 ? 'last 28 days' : 'last ' + n + ' day' + (n === 1 ? '' : 's') + ' (tracking since ' + day(t.from) + ')')));
+    }
+    root.appendChild(tiles);
+
+    var goals = (data.goals || []).filter(function (g) { return GOALS[g.key]; });
+    if (!goals.length) { root.appendChild(empty('No goals yet. Tell Claude your targets (for example “100 YouTube subscribers by 31 Dec”) and they show up here as progress bars.')); return; }
+    goals.forEach(function (g) {
+      var cur = GOALS[g.key][1](), label = GOALS[g.key][0];
+      if (cur == null) { root.appendChild(el('div', { class: 'goal' }, [el('div', { class: 'goal-top' }, [el('b', { text: label }), el('span', { class: 'faint', text: 'not tracked yet' })])])); return; }
+      var pct = Math.min(100, Math.round(cur / g.target * 100)), left = g.target - cur, done = left <= 0;
+      var note = done ? 'Reached. Time for a new goal?' : fmt.format(left) + ' to go';
+      if (!done && g.by) {
+        var weeks = (Date.parse(g.by + 'T23:59:59Z') - Date.now()) / (7 * 864e5);
+        note += weeks > 0 ? ' · about ' + fmt.format(Math.ceil(left / weeks)) + ' a week to make it by ' + day(g.by) : ' · the ' + day(g.by) + ' date has passed';
+      }
+      var bar = el('div', { class: 'bar' + (done ? ' done' : ''), role: 'progressbar', 'aria-label': label, 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': pct }, [el('div', { style: 'width:' + Math.max(2, pct) + '%' })]);
+      root.appendChild(el('div', { class: 'goal' }, [
+        el('div', { class: 'goal-top' }, [el('b', { text: label }), el('span', { class: 'muted', text: fmt.format(cur) + ' of ' + fmt.format(g.target) + ' · ' + pct + '%' })]),
+        bar, el('div', { class: 'faint', text: note })]));
+    });
+  }
+
+  // ---------- Shorts: the same clip on YouTube and TikTok ----------
+  function plural(n, w) { return fmt.format(n) + ' ' + w + (n === 1 ? '' : 's'); }
+  function hist(key) { return (data.shorts && data.shorts.history && data.shorts.history[key]) || []; }
+  // Views roughly `hours` after posting, read off the daily snapshots. Between two snapshots it draws a straight
+  // line (posting time counts as 0 views); marked "about" unless a snapshot landed within 2 hours of the mark.
+  function viewsAt(key, published, hours) {
+    var t0 = Date.parse(published), target = t0 + hours * 3600e3;
+    if (Date.now() < target) return { wait: true };
+    var pts = [[t0, 0]].concat(hist(key).map(function (e) { return [Date.parse(e[0] + ':00Z'), e[1]]; }));
+    for (var i = 0; i < pts.length; i++) if (Math.abs(pts[i][0] - target) <= 2 * 3600e3 && i > 0) return { v: pts[i][1] };
+    for (var j = 1; j < pts.length; j++) {
+      var a = pts[j - 1], b = pts[j];
+      if (a[0] <= target && b[0] >= target && b[0] - a[0] <= 36 * 3600e3) return { v: Math.round(a[1] + (b[1] - a[1]) * (target - a[0]) / (b[0] - a[0])), about: true };
+    }
+    return null;
+  }
+  function atText(key, v) {
+    function one(label, hours) {
+      var r = viewsAt(key, v.published, hours);
+      if (!r) return null;
+      return label + ' ' + (r.wait ? 'still to come' : (r.about ? '≈' : '') + fmt.format(r.v));
+    }
+    if (viewsAt(key, v.published, 24) && viewsAt(key, v.published, 24).wait) return '24h and 7d views still to come';
+    var parts = [one('24h', 24), one('7d', 168)].filter(Boolean);
+    return parts.length ? parts.join(' · ') : null;
+  }
+
+  // Titles differ between platforms, so pair by posting time (within 36 hours) and a similar length.
+  // data.shorts.links overrides it: { youtubeId: tiktokId } or { youtubeId: null } for "not on TikTok".
+  function matchShorts() {
+    var yts = (data.youtube.videos || []).filter(function (v) { return v.seconds <= 180; });
+    var tts = (data.tiktok && data.tiktok.videos) || [];
+    var links = (data.shorts && data.shorts.links) || {};
+    var ttById = {}; tts.forEach(function (t) { ttById[t.id] = t; });
+    var pair = {}, used = {}, cands = [];
+    yts.forEach(function (y) { if (y.id in links) { pair[y.id] = links[y.id]; if (links[y.id]) used[links[y.id]] = true; } });
+    yts.forEach(function (y) {
+      if (y.id in links) return;
+      tts.forEach(function (t) {
+        if (used[t.id]) return;
+        var dh = Math.abs(Date.parse(y.published) - Date.parse(t.published)) / 3600e3, dd = Math.abs(y.seconds - t.seconds);
+        var tol = Math.max(3, 0.15 * Math.max(y.seconds, t.seconds));
+        if (dh <= 36 && dd <= tol) cands.push([dh / 36 + dd / tol, y.id, t.id]);
+      });
+    });
+    cands.sort(function (a, b) { return a[0] - b[0]; });
+    cands.forEach(function (c) { if (!(c[1] in pair) && !used[c[2]]) { pair[c[1]] = c[2]; used[c[2]] = true; } });
+    var rows = yts.map(function (y) {
+      var id = pair[y.id];
+      return { yt: y, tt: id ? ttById[id] || { id: id, missing: true } : null, manual: y.id in links };
+    });
+    tts.forEach(function (t) { if (!used[t.id]) rows.push({ yt: null, tt: t }); });
+    rows.forEach(function (r) { r.when = (r.yt || r.tt).published; });
+    return rows.sort(function (a, b) { return b.when.localeCompare(a.when); });
+  }
+  function tagsFor(r) {
+    var T = (data.shorts && data.shorts.tags) || {};
+    return Object.assign({}, r.tt && T[r.tt.id], r.yt && T[r.yt.id]);
+  }
+
+  function renderShorts() {
+    var root = clear($('shorts'));
+    var rows = matchShorts();
+    if (!rows.length) { root.appendChild(empty('Switches on once YouTube and TikTok are both connected.')); return; }
+    var pct = {}; ((data.youtube.last28 && data.youtube.last28.topVideos) || []).forEach(function (v) { pct[v.id] = v.avgPercent; });
+    var both = rows.filter(function (r) { return r.yt && r.tt && !r.tt.missing; });
+    var ytWins = 0, ttWins = 0;
+    both.forEach(function (r) { r.win = winner(r.yt.views, r.tt.views); if (r.win.side === 'yt') ytWins++; else if (r.win.side === 'tt') ttWins++; });
+
+    function tile(k, v, d) { return el('div', { class: 'tile' }, [el('div', { class: 'k', text: k }), el('div', { class: 'v', text: v }), d ? el('div', { class: 'd', text: d }) : null]); }
+    root.appendChild(el('div', { class: 'tiles', style: 'margin-bottom:8px' }, [
+      tile('On both', String(both.length), 'Shorts matched'),
+      tile('YouTube won', String(ytWins), 'more views'),
+      tile('TikTok won', String(ttWins), 'more views'),
+    ]));
+
+    var list = rows.map(function (r) { return shortRow(r, pct); });
+    list.slice(0, 8).forEach(function (n) { root.appendChild(n); });
+    if (list.length > 8) root.appendChild(fold('olderShorts', 'Older Shorts (' + (list.length - 8) + ')', list.slice(8)));
+    root.appendChild(hookTable(rows));
+    root.appendChild(el('p', { class: 'faint', style: 'margin:10px 0 0', text: 'Matched by posting time and length, because the titles differ. Wrong pair? Tell Claude which two go together (or that one isn’t on TikTok) and it fixes it. 24h and 7d come from the daily snapshots: “≈” means read between two of them.' }));
+  }
+
+  function winner(a, b) {
+    if (a === b || Math.max(a, b) < 10 || Math.abs(a - b) / Math.max(a, b) < 0.1) return { side: null, text: 'Even' };
+    var side = a > b ? 'yt' : 'tt', lo = Math.min(a, b);
+    return { side: side, text: side === 'yt' ? 'YouTube' : 'TikTok', by: lo ? '×' + (Math.round(Math.max(a, b) / lo * 10) / 10) : 'only one with views' };
+  }
+
+  function shortRow(r, pct) {
+    var y = r.yt, t = r.tt, tags = tagsFor(r);
+    var title = y ? el('a', { href: 'https://youtube.com/shorts/' + y.id, target: '_blank', rel: 'noopener', text: y.title })
+      : (t.url ? el('a', { href: t.url, target: '_blank', rel: 'noopener', text: t.title }) : el('b', { text: t.title }));
+    var game = tags.game || (y && y.title.indexOf(' | ') > 0 ? y.title.split(' | ').pop() : null);
+    var meta = el('div', { class: 'meta' }, [
+      el('span', { text: day(r.when) + ' · ' + ((y || t).seconds) + 's' }),
+      game ? el('span', { class: 'pill', text: game }) : null,
+      tags.hook ? el('span', { class: 'pill', text: 'hook: ' + tags.hook }) : null,
+      tags.grade ? el('span', { class: 'pill', text: 'grade ' + tags.grade }) : null,
+      r.manual ? el('span', { class: 'pill manual', text: 'paired by hand' }) : null,
+    ]);
+    var head = el('div', { class: 'sh-t' }, [title, y && t && !t.missing ? el('div', { class: 'cap', text: 'TikTok: “' + t.title + '”' }) : null, meta]);
+
+    var ytBox = y ? el('div', { class: 'sh-p yt' + (r.win && r.win.side === 'yt' ? ' won' : '') }, [
+      el('div', { class: 'k', text: 'YouTube' }), el('div', { class: 'v', text: y.scheduled ? 'Scheduled' : fmt.format(y.views) }),
+      y.scheduled ? el('div', { class: 'd', text: 'not out yet' })
+        : pct[y.id] != null ? el('div', { class: 'd', text: Math.round(pct[y.id]) + '% viewed' }) : el('div', { class: 'd', text: '% viewed shows after 2–3 days' }),
+      !y.scheduled && atText('yt:' + y.id, y) ? el('div', { class: 'd', text: atText('yt:' + y.id, y) }) : null,
+    ]) : el('div', { class: 'sh-p yt none' }, [el('div', { class: 'k', text: 'YouTube' }), el('div', { class: 'v', text: 'Not found on YouTube' })]);
+
+    var ttBox;
+    if (!t) ttBox = el('div', { class: 'sh-p tt none' }, [el('div', { class: 'k', text: 'TikTok' }), el('div', { class: 'v', text: r.manual ? 'Not on TikTok' : 'No match found' })]);
+    else if (t.missing) ttBox = el('div', { class: 'sh-p tt none' }, [el('div', { class: 'k', text: 'TikTok' }), el('div', { class: 'v', text: 'Older than the latest 20 TikToks' })]);
+    else ttBox = el('div', { class: 'sh-p tt' + (r.win && r.win.side === 'tt' ? ' won' : '') }, [
+      el('div', { class: 'k', text: 'TikTok' }), el('div', { class: 'v', text: fmt.format(t.views) }),
+      el('div', { class: 'd', text: plural(t.likes, 'like') + ' · ' + plural(t.shares, 'share') }),
+      atText('tt:' + t.id, t) ? el('div', { class: 'd', text: atText('tt:' + t.id, t) }) : null,
+    ]);
+
+    var w = r.win ? el('div', { class: 'sh-w' }, [el('span', { class: 'faint', text: 'Won' }), el('b', { class: r.win.side || '', text: r.win.text }), r.win.by ? el('span', { class: 'faint', text: r.win.by }) : null])
+      : el('div', { class: 'sh-w' });
+    return el('div', { class: 'sh' }, [head, ytBox, ttBox, w]);
+  }
+
+  // Groups tagged Shorts by hook style. Hooks come from the Shorts Desk (ask Claude to sync them).
+  function hookTable(rows) {
+    var by = {};
+    rows.forEach(function (r) {
+      var h = tagsFor(r).hook; if (!h) return;
+      var g = by[h] = by[h] || { n: 0, views: 0 };
+      g.n++; g.views += (r.yt ? r.yt.views : 0) + (r.tt && !r.tt.missing ? r.tt.views : 0);
+    });
+    var names = Object.keys(by);
+    if (!names.length) return el('p', { class: 'faint', style: 'margin:14px 0 0', text: 'Which hooks work: once Shorts are tagged with a hook style (from the Shorts Desk), a table here compares them.' });
+    names.sort(function (a, b) { return by[b].views / by[b].n - by[a].views / by[a].n; });
+    return el('div', { style: 'margin-top:16px' }, [el('h3', { style: 'font-size:.95rem;margin:0 0 6px', text: 'Which hooks work' }), el('table', null, [
+      el('thead', null, [el('tr', null, [el('th', { text: 'Hook' }), el('th', { class: 'n', text: 'Shorts' }), el('th', { class: 'n', text: 'Avg views (both)' })])]),
+      el('tbody', null, names.map(function (h) { return el('tr', null, [el('td', { text: h }), el('td', { class: 'n', text: String(by[h].n) }), el('td', { class: 'n', text: fmt.format(Math.round(by[h].views / by[h].n)) })]); }))])]);
+  }
+
+  // ---------- chat spikes as clip leads ----------
+  // Rolling 3-minute message sums; the biggest ones at least 5 minutes apart.
+  function chatPeaks(s) {
+    var ser = s.series, W = 3, sums = [];
+    for (var i = 0; i + W <= ser.length; i++) { var t = 0; for (var k = 0; k < W; k++) t += ser[i + k][2] || 0; sums.push([i, t]); }
+    sums.sort(function (a, b) { return b[1] - a[1] || a[0] - b[0]; });
+    var picked = [];
+    for (var j = 0; j < sums.length && picked.length < 5; j++) {
+      var c = sums[j]; if (c[1] < 2) break;
+      if (picked.every(function (p) { return Math.abs(p[0] - c[0]) >= 5; })) picked.push(c);
+    }
+    if (picked.length > 3) picked = picked.filter(function (p, i) { return i < 3 || p[1] >= picked[0][1] * 0.4; });
+    return picked;
+  }
+  function vodFor(s) {
+    var start = Date.parse(s.date + 'T' + s.start + ':00+02:00'), best = null;
+    (data.twitch.vods || []).forEach(function (v) {
+      var d = Math.abs(Date.parse(v.created) - start);
+      if (d <= 30 * 60e3 && (!best || d < best.d)) best = { v: v, d: d };
+    });
+    return best && { vod: best.v, start: start };
+  }
+  function tParam(sec) { sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 3600) + 'h' + Math.floor(sec % 3600 / 60) + 'm' + (sec % 60) + 's'; }
+  function clipLeads(s) {
+    var peaks = chatPeaks(s), box = el('div', { class: 'leads' }, [el('h3', { text: 'Clip leads: where chat spiked' })]);
+    if (!peaks.length) { box.appendChild(empty('Chat was too quiet to call any spikes on this stream.')); return box; }
+    var m = vodFor(s);
+    box.appendChild(el('ol', null, peaks.map(function (p) {
+      var label = 'minute ' + p[0] + ' (' + s.series[p[0]][0] + ' SAST)';
+      // link a minute early: chat reacts after the moment happens
+      var at = m && (m.start + (p[0] - 1) * 60e3 - Date.parse(m.vod.created)) / 1000;
+      return el('li', null, [m ? el('a', { href: 'https://www.twitch.tv/videos/' + m.vod.id + '?t=' + tParam(at), target: '_blank', rel: 'noopener', text: label }) : el('b', { text: label }),
+        el('span', { text: ': ' + p[1] + ' messages in 3 min' })]);
+    })));
+    box.appendChild(el('p', { class: 'faint', style: 'margin:6px 0 0', text: m ? 'Links open the Twitch VOD a minute before the spike, because chat reacts after the moment.'
+      : 'No Twitch VOD found for this stream (Twitch deletes them after a while), so these are times only.' }));
+    return box;
+  }
+
   // ---------- streams ----------
   function renderSessions() {
     var sel = clear($('session')), sessions = data.twitch.sessions.slice().reverse();
@@ -323,6 +615,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     if (s.adBreaks.length) notes.push(s.adBreaks.length + ' ad breaks (' + s.adBreaks.map(function (a) { return 'min ' + a.minute; }).join(', ') + ')');
     if (s.longestQuietChat && s.longestQuietChat.minutes >= 15) notes.push('chat silent for ' + s.longestQuietChat.minutes + ' min from minute ' + s.longestQuietChat.fromMinute);
     if (notes.length) root.appendChild(el('p', { class: 'faint', style: 'margin:0 0 8px', text: 'Spotted: ' + notes.join(' · ') + '.' }));
+    root.appendChild(clipLeads(s));
     root.appendChild(fold('charts', 'Minute-by-minute charts', [el('div', { class: 'chart', id: 'c-viewers' }), el('div', { class: 'chart', id: 'c-chat' })], drawStreamCharts));
     drawStreamCharts();
     if (data.twitch.sessions.length > 1) root.appendChild(fold('streams', 'All streams (' + data.twitch.sessions.length + ')', [sessionTable()]));

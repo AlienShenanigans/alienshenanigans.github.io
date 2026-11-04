@@ -17,7 +17,8 @@ is ever committed. The page decrypts it in the browser.
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | TikTok followers, likes, per-video stats. Connect once at /hq/tiktok.html, then run the workflow with the code it shows. |
 | `ANTHROPIC_API_KEY` | Claude writes a new take every Monday |
 
-The "Refresh Creator HQ" workflow runs daily; run it by hand from the Actions tab
+The "Refresh Creator HQ" workflow runs twice a day (~05:17 and ~16:43 UTC; the second run catches
+Shorts soon after they go out, so the Shorts tab can show views at about 24 hours and 7 days); run it by hand from the Actions tab
 (tick "Also write a new take" to get a take straight away).
 
 ## Commands (need `HQ_PASSWORD` set)
@@ -27,3 +28,16 @@ The "Refresh Creator HQ" workflow runs daily; run it by hand from the Actions ta
     node tools/hq/hq.mjs set-take take.json
     node tools/hq/hq.mjs show
     NEW_HQ_PASSWORD=... node tools/hq/hq.mjs rekey
+
+Shorts tab and goals:
+
+    node tools/hq/hq.mjs short-link <youtubeId> <tiktokId>   # pair two posts by hand
+    node tools/hq/hq.mjs short-link <youtubeId> none         # "this one isn't on TikTok"
+    node tools/hq/hq.mjs short-link <youtubeId> auto         # back to automatic matching
+    node tools/hq/hq.mjs short-tag <youtubeId> --game "Slender" --hook "said I felt safe" --grade A
+    node tools/hq/hq.mjs goal yt-subs 100 --by 2026-12-31     # keys: twitch-followers, yt-subs, yt-views, tt-followers, tt-likes
+    node tools/hq/hq.mjs goal yt-subs off
+
+Data added by these: `shorts.history` (a dated views/likes snapshot per Short per day, written by
+`fetch`), `shorts.links` (manual pairings), `shorts.tags` (game / hook / grade / Shorts Desk id),
+`goals`.
