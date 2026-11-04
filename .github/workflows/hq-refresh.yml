@@ -1,0 +1,46 @@
+name: Refresh Creator HQ
+
+on:
+  schedule:
+    - cron: '17 5 * * *'      # every day, ~05:17 UTC: pull YouTube + Twitch
+  workflow_dispatch:
+    inputs:
+      take:
+        description: 'Also write a new take with Claude'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency: hq-refresh
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pull numbers
+        env:
+          HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}
+          YT_API_KEY: ${{ secrets.YT_API_KEY }}
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+        run: node tools/hq/hq.mjs fetch
+      - name: Weekly take (Mondays, or when asked)
+        env:
+          HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ "${{ inputs.take }}" = "true" ] || [ "$(date -u +%u)" = "1" ]; then node tools/hq/hq.mjs take; else echo "Not Monday: no take today"; fi
+      - name: Save
+        run: |
+          git config user.name "hq-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hq/data.enc
+          git diff --cached --quiet && exit 0
+          git commit -m "Refresh Creator HQ data"
+          git push
