@@ -456,10 +456,11 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     var t0 = Date.parse(published), target = t0 + hours * 3600e3;
     if (Date.now() < target) return { wait: true };
     var pts = [[t0, 0]].concat(hist(key).map(function (e) { return [Date.parse(e[0] + ':00Z'), e[1]]; }));
-    for (var i = 0; i < pts.length; i++) if (Math.abs(pts[i][0] - target) <= 2 * 3600e3 && i > 0) return { v: pts[i][1] };
+    var tol = hours < 6 ? 20 * 60e3 : 2 * 3600e3, span = hours < 6 ? 3 * 3600e3 : 36 * 3600e3;
+    for (var i = 0; i < pts.length; i++) if (Math.abs(pts[i][0] - target) <= tol && i > 0) return { v: pts[i][1] };
     for (var j = 1; j < pts.length; j++) {
       var a = pts[j - 1], b = pts[j];
-      if (a[0] <= target && b[0] >= target && b[0] - a[0] <= 36 * 3600e3) return { v: Math.round(a[1] + (b[1] - a[1]) * (target - a[0]) / (b[0] - a[0])), about: true };
+      if (a[0] <= target && b[0] >= target && b[0] - a[0] <= span) return { v: Math.round(a[1] + (b[1] - a[1]) * (target - a[0]) / (b[0] - a[0])), about: true };
     }
     return null;
   }
@@ -469,8 +470,8 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
       if (!r) return null;
       return label + ' ' + (r.wait ? 'still to come' : (r.about ? '≈' : '') + fmt.format(r.v));
     }
-    if (viewsAt(key, v.published, 24) && viewsAt(key, v.published, 24).wait) return '24h and 7d views still to come';
-    var parts = [one('24h', 24), one('7d', 168)].filter(Boolean);
+    if (viewsAt(key, v.published, 24) && viewsAt(key, v.published, 24).wait) return [one('1h', 1), '24h and 7d views still to come'].filter(Boolean).join(' · ');
+    var parts = [one('1h', 1), one('24h', 24), one('7d', 168)].filter(Boolean);
     return parts.length ? parts.join(' · ') : null;
   }
 
@@ -697,7 +698,8 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     var W = Math.max(280, host.clientWidth || 600), H = 150, pad = { l: 28, r: 8, t: 10, b: 22 };
     var pts = s.series, n = pts.length, maxY = Math.max(1, Math.max.apply(null, pts.map(function (p) { return p[col]; })));
     maxY = Math.ceil(maxY);
-    var x = function (i) { return pad.l + (W - pad.l - pad.r) * (n === 1 ? 0 : i / (n - 1)); };
+    var band = kind === 'bar', bwid = (W - pad.l - pad.r) / n;
+    var x = band ? function (i) { return pad.l + bwid * (i + .5); } : function (i) { return pad.l + (W - pad.l - pad.r) * (n === 1 ? 0 : i / (n - 1)); };
     var y = function (v) { return pad.t + (H - pad.t - pad.b) * (1 - v / maxY); };
     function sv(tag, a) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); return e; }
     host.appendChild(el('div', { class: 'lbl', text: title }));
@@ -710,7 +712,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     });
     // x labels every 30 minutes
     for (var i = 0; i < n; i += step) {
-      var tx2 = sv('text', { x: x(i), y: H - 6, 'text-anchor': i === 0 ? 'start' : 'middle', fill: '#7f78a3', 'font-size': 11 });
+      var tx2 = sv('text', { x: x(i), y: H - 6, 'text-anchor': i === 0 && !band ? 'start' : 'middle', fill: '#7f78a3', 'font-size': 11 });
       tx2.textContent = pts[i][0]; svg.appendChild(tx2);
     }
     // ad breaks
@@ -723,7 +725,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
       var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p[col]).toFixed(1); }).join(' ');
       svg.appendChild(sv('path', { d: d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round' }));
     } else {
-      var bw = Math.max(1, (W - pad.l - pad.r) / n - 1);
+      var bw = Math.max(1, Math.min(48, bwid * .7));
       pts.forEach(function (p, i) {
         if (!p[col]) return;
         svg.appendChild(sv('rect', { x: x(i) - bw / 2, y: y(p[col]), width: bw, height: y(0) - y(p[col]), fill: color, rx: Math.min(2, bw / 2) }));
@@ -739,7 +741,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     var tip = el('div', { class: 'tip' }); host.appendChild(tip);
     function move(clientX) {
       var r = svg.getBoundingClientRect(), px = (clientX - r.left) * (W / r.width);
-      var i = Math.max(0, Math.min(n - 1, Math.round((px - pad.l) / (W - pad.l - pad.r) * (n - 1))));
+      var i = Math.max(0, Math.min(n - 1, band ? Math.floor((px - pad.l) / bwid) : Math.round((px - pad.l) / (W - pad.l - pad.r) * (n - 1))));
       var p = pts[i];
       cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('opacity', .6);
       dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(p[col])); dot.setAttribute('opacity', 1);
@@ -788,6 +790,18 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     if ($('c-ytwatch') && G.watch.length > 1) lineChart($('c-ytwatch'), 'Minutes watched per day', { series: G.watch }, 1, 'var(--gold)', 'bar', 'min', stepFor(G.watch.length), lbl);
     if ($('c-ytnet') && G.net.length > 1) lineChart($('c-ytnet'), 'New subscribers per day', { series: G.net }, 1, 'var(--good)', 'bar', 'subs', stepFor(G.net.length), lbl);
   }
+  // Best first hour: views ~1h after posting, from the hourly snapshots (Shorts only, YouTube).
+  function firstHourTile(tile) {
+    var best = null, n = 0;
+    (data.youtube.videos || []).forEach(function (v) {
+      if (v.scheduled || v.seconds > 180) return;
+      var r = viewsAt('yt:' + v.id, v.published, 1);
+      if (!r || r.wait) return;
+      n++; if (!best || r.v > best.v) best = { v: r.v, about: r.about, title: v.title };
+    });
+    if (!best) return tile('Best first hour', '–', 'tracked from the next Short you post');
+    return tile('Best first hour', (best.about ? '≈' : '') + fmt.format(best.v), best.title.length > 32 ? best.title.slice(0, 31) + '…' : best.title);
+  }
   function renderGrowth() {
     var root = clear($('ytg')), sel = $('ytg-range');
     var all = (data.youtube.daily || []).filter(function (d) { return d.day; });
@@ -820,9 +834,10 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     function tile(k, v, d) { return el('div', { class: 'tile' }, [el('div', { class: 'k', text: k }), el('div', { class: 'v', text: v }), d ? el('div', { class: 'd', text: d }) : null]); }
     root.appendChild(el('div', { class: 'tiles', style: 'margin-bottom:8px' }, [
       tile('Subscribers', nowSubs == null ? '–' : fmt.format(nowSubs), startSubs != null && nowSubs != null ? (nowSubs - startSubs >= 0 ? '+' : '') + (nowSubs - startSubs) + ' in this range' : 'channel total'),
-      tile('Last full week', full.length ? fmt.format(full[full.length - 1].views) : '–', wow == null ? 'views' : (wow >= 0 ? '▲ ' : '▼ ') + fmt.format(Math.abs(wow)) + (wowPct != null ? ' (' + (wowPct >= 0 ? '+' : '') + wowPct + '%)' : '') + ' vs week before'),
+      tile('Last full week', full.length ? fmt.format(full[full.length - 1].views) : '–', wow == null ? 'views' : wowPct == null ? 'first week with views' : (wow >= 0 ? '▲ ' : '▼ ') + fmt.format(Math.abs(wow)) + ' (' + (wowPct >= 0 ? '+' : '') + wowPct + '%) vs week before'),
       tile('Best day ever', best ? fmt.format(best.views) : '–', best ? day(best.day) : ''),
       tile('Best week ever', bestWeek ? fmt.format(bestWeek.views) : '–', bestWeek ? 'week of ' + shortDate(bestWeek.mon) : ''),
+      firstHourTile(tile),
       tile('Views streak', streak + (streak === 1 ? ' day' : ' days'), 'in a row with views'),
     ]));
 

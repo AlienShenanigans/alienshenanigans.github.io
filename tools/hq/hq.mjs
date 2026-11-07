@@ -289,11 +289,15 @@ function trackShorts(data, now = new Date()) {
     const h = (sh.history[key] ??= []);
     const last = h[h.length - 1];
     const entry = [at, v.views ?? 0, v.likes ?? 0];
-    if (last && last[0].slice(0, 10) === day) { h[h.length - 1] = entry; return; }
+    // First 48h: keep every hourly snapshot (for "first hour" numbers); after that, one per day.
+    const young = now - new Date(v.published) < 48 * 3600e3;
+    const lastYoung = last && new Date(last[0] + ':00Z') - new Date(v.published) < 48 * 3600e3;
+    if (last && last[0].slice(0, 10) === day && !young && !lastYoung) { h[h.length - 1] = entry; return; }
+    if (last && last[0].slice(0, 13) === at.slice(0, 13)) { h[h.length - 1] = entry; return; }
     const old = now - new Date(v.published) > 60 * 864e5;
     if (old && last && last[1] === entry[1]) return;
     h.push(entry);
-    if (h.length > 40) h.splice(0, h.length - 40);
+    if (h.length > 100) h.splice(0, h.length - 100);
   };
   for (const v of data.youtube.videos || []) if (v.seconds <= 180) add('yt:' + v.id, v);
   // Permanent posting log (never trimmed), so weekly posting goals still count once videos fall out of the latest 25.
