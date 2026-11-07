@@ -4,7 +4,7 @@
 //
 //   node tools/hq/hq.mjs add-twitch-csv <file.csv> [--game "Name"] [--date YYYY-MM-DD]
 //   node tools/hq/hq.mjs fetch          pulls YouTube + Twitch + trending (skips any source without keys)
-//   node tools/hq/hq.mjs take           asks Claude for the weekly take (needs ANTHROPIC_API_KEY)
+//   node tools/hq/hq.mjs take           asks Claude for the daily take (needs ANTHROPIC_API_KEY)
 //   node tools/hq/hq.mjs set-take <file.json>   stores a take written elsewhere
 //   node tools/hq/hq.mjs note "<text>" [--from "YouTube Studio"]
 //   node tools/hq/hq.mjs tiktok-connect <code>   one-time: swaps the TikTok sign-in code for a token
@@ -354,7 +354,7 @@ async function take() {
   });
   const text = r.content.filter((c) => c.type === 'text').map((c) => c.text).join('');
   const json = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
-  data.take = { ...json, at: new Date().toISOString(), by: 'Claude (weekly auto)' };
+  data.take = { ...json, at: new Date().toISOString(), by: 'Claude (daily auto)' };
   await save(data);
   console.log('Take:', json.headline);
 }

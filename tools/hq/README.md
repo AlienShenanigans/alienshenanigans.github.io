@@ -15,7 +15,7 @@ is ever committed. The page decrypts it in the browser.
 | `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` | Twitch followers, VODs, top games |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | YouTube Analytics (watch time, % viewed, traffic sources) and Search Console |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | TikTok followers, likes, per-video stats. Connect once at /hq/tiktok.html, then run the workflow with the code it shows. |
-| `ANTHROPIC_API_KEY` | Claude writes a new take every Monday |
+| `ANTHROPIC_API_KEY` | Claude writes a new take every morning |
 
 The "Refresh Creator HQ" workflow runs twice a day (~05:17 and ~16:43 UTC; the second run catches
 Shorts soon after they go out, so the Shorts tab can show views at about 24 hours and 7 days); run it by hand from the Actions tab

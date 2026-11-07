@@ -47,12 +47,12 @@ jobs:
           TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
         run: node tools/hq/hq.mjs fetch
-      - name: Weekly take (Mondays, or when asked)
+      - name: Daily take (~07:17 SAST, or when asked)
         env:
           HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          if [ "${{ inputs.take }}" = "true" ] || { [ "$(date -u +%u)" = "1" ] && [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%H)" = "05" ]; }; then node tools/hq/hq.mjs take; else echo "Not Monday: no take today"; fi
+          if [ "${{ inputs.take }}" = "true" ] || { [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%H)" = "05" ]; }; then node tools/hq/hq.mjs take; else echo "Take only runs on the 05 UTC refresh"; fi
       - name: Shorts desk feed
         env:
           HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}
