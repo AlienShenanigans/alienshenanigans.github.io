@@ -8,6 +8,7 @@
 //   node tools/hq/hq.mjs set-take <file.json>   stores a take written elsewhere
 //   node tools/hq/hq.mjs note "<text>" [--from "YouTube Studio"]
 //   node tools/hq/hq.mjs tiktok-connect <code>   one-time: swaps the TikTok sign-in code for a token
+//   node tools/hq/hq.mjs desk-feed      writes hq/desk-feed.enc (encrypted summary for the Shorts desk)
 //   node tools/hq/hq.mjs show           prints the decrypted data
 //   node tools/hq/hq.mjs rekey          re-encrypts with NEW_HQ_PASSWORD
 //   node tools/hq/hq.mjs short-link <youtubeId> <tiktokId|none|auto>   fixes a wrong Shorts match
@@ -16,7 +17,8 @@
 //                                     yt-longform (long videos posted from today), shorts-weekly (Shorts per week)
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { load, save, upsert } from './vault.mjs';
+import { writeFile } from 'node:fs/promises';
+import { load, save, seal, upsert, ROOT } from './vault.mjs';
 
 const YT_CHANNEL = 'UCMmjDFOAr2v_bBuBjW8SvOA';
 const TWITCH_LOGIN = 'alienshenanigans';
@@ -357,6 +359,78 @@ async function take() {
   console.log('Take:', json.headline);
 }
 
+// ---------- Shorts desk feed (hq/desk-feed.enc) ----------
+// Same pairing as the /hq page: manual links first, then posting time within 36h and similar length.
+function matchShorts(data) {
+  const yts = (data.youtube.videos || []).filter((v) => v.seconds <= 180);
+  const tts = data.tiktok?.videos || [];
+  const links = data.shorts?.links || {};
+  const pair = {}, used = {}, cands = [];
+  for (const y of yts) if (y.id in links) { pair[y.id] = links[y.id]; if (links[y.id]) used[links[y.id]] = true; }
+  for (const y of yts) {
+    if (y.id in links) continue;
+    for (const t of tts) {
+      if (used[t.id]) continue;
+      const dh = Math.abs(Date.parse(y.published) - Date.parse(t.published)) / 3600e3, dd = Math.abs(y.seconds - t.seconds);
+      const tol = Math.max(3, 0.15 * Math.max(y.seconds, t.seconds));
+      if (dh <= 36 && dd <= tol) cands.push([dh / 36 + dd / tol, y.id, t.id]);
+    }
+  }
+  cands.sort((a, b) => a[0] - b[0]);
+  for (const [, y, t] of cands) if (!(y in pair) && !used[t]) { pair[y] = t; used[t] = true; }
+  return { yts, pair, ttById: Object.fromEntries(tts.map((t) => [t.id, t])) };
+}
+
+function takeText(t) {
+  if (!t) return null;
+  const sec = [['Working', t.wins], ['Not working', t.worries], ['Do this week', t.next], ['Trends', t.trending]]
+    .filter(([, l]) => l?.length).map(([h, l]) => `${h}:\n` + l.map((x) => `- ${x}`).join('\n'));
+  return [t.headline, ...sec].filter(Boolean).join('\n\n');
+}
+
+export function deskFeed(data) {
+  const cutoff = daysAgo(90);
+  const recent = (l) => (l || []).filter((s) => s.date >= cutoff);
+  const top = Object.fromEntries((data.youtube.last28?.topVideos || []).map((v) => [v.id, v]));
+  const tags = data.shorts?.tags || {};
+  const { yts, pair, ttById } = matchShorts(data);
+  const shorts = {};
+  for (const y of yts) {
+    if (y.scheduled) continue;
+    const tt = pair[y.id] ? ttById[pair[y.id]] : null, a = top[y.id];
+    const key = tags[y.id]?.desk || (tt && tags[tt.id]?.desk) || y.id;
+    shorts[key] = {
+      yt_id: y.id, title: y.title, published: y.published,
+      yt_views: y.views, yt_likes: y.likes, yt_comments: y.comments,
+      avg_pct: a ? Math.round(a.avgPercent * 10) / 10 : null,
+      tt_views: tt?.views ?? null, tt_likes: tt?.likes ?? null,
+      subs: a ? a.subs : null,
+    };
+  }
+  return {
+    at: new Date().toISOString(),
+    channel: {
+      yt: recent(data.youtube.snapshots).map(({ date, subs, views }) => ({ date, subs, views })),
+      tt: recent(data.tiktok?.snapshots).map(({ date, followers, likes }) => ({ date, followers, likes })),
+      twitch: recent(data.twitch.snapshots).map(({ date, followers }) => ({ date, followers })),
+    },
+    goals: data.goals || [],
+    shorts,
+    trending: {
+      youtube_gaming: (data.trending?.youtubeGaming?.items || []).map((i) => i.title),
+      twitch_top_games: data.trending?.twitchTopGames?.items || [],
+    },
+    opinion: takeText(data.take),
+    opinion_at: data.take?.at || null,
+  };
+}
+
+async function writeDeskFeed() {
+  const feed = deskFeed(await load());
+  await writeFile(path.join(ROOT, 'hq', 'desk-feed.enc'), await seal(feed));
+  console.log(`Desk feed: ${Object.keys(feed.shorts).length} Shorts, opinion from ${feed.opinion_at || 'none'}`);
+}
+
 // ---------- commands ----------
 const commands = {
   'tiktok-connect': () => tiktokConnect(rest[0]),
@@ -372,6 +446,7 @@ const commands = {
     await save(data);
   },
   take,
+  'desk-feed': writeDeskFeed,
   async 'set-take'() {
     const data = await load();
     data.take = { ...JSON.parse(await readFile(rest[0], 'utf8')), at: new Date().toISOString() };

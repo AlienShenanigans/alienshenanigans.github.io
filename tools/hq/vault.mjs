@@ -50,12 +50,17 @@ export async function load(pw = password()) {
 
 export async function save(data, pw = password()) {
   data.updatedAt = new Date().toISOString();
+  await writeFile(DATA_FILE, await seal(data, pw));
+}
+
+// Encrypts any JSON value into the box format the /hq page (and the Shorts desk) decrypt.
+export async function seal(data, pw = password()) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await key(pw, salt),
     new TextEncoder().encode(JSON.stringify(data)));
   const box = { v: 1, kdf: 'PBKDF2-SHA256', iter: ITER, salt: b64(salt), iv: b64(iv), ct: b64(new Uint8Array(ct)) };
-  await writeFile(DATA_FILE, JSON.stringify(box) + '\n');
+  return JSON.stringify(box) + '\n';
 }
 
 // Keep one entry per key, newest wins, sorted by `by`.
