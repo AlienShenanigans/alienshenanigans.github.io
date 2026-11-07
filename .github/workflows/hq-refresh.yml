@@ -2,8 +2,7 @@ name: Refresh Creator HQ
 
 on:
   schedule:
-    - cron: '17 5 * * *'      # every day, ~05:17 UTC: pull YouTube + Twitch
-    - cron: '43 16 * * *'     # and ~16:43 UTC, just after Shorts go out, so "views at 24h / 7 days" land close
+    - cron: '17 * * * *'      # every hour at :17 (free for a public repo; a few YouTube API units per run)
   workflow_dispatch:
     inputs:
       take:
@@ -53,7 +52,7 @@ jobs:
           HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          if [ "${{ inputs.take }}" = "true" ] || { [ "$(date -u +%u)" = "1" ] && [ "${{ github.event.schedule }}" = "17 5 * * *" ]; }; then node tools/hq/hq.mjs take; else echo "Not Monday: no take today"; fi
+          if [ "${{ inputs.take }}" = "true" ] || { [ "$(date -u +%u)" = "1" ] && [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%H)" = "05" ]; }; then node tools/hq/hq.mjs take; else echo "Not Monday: no take today"; fi
       - name: Shorts desk feed
         env:
           HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}

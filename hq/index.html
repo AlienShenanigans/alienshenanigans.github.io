@@ -184,6 +184,10 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
       <h2 id="yta-h">YouTube, <span>last 28 days</span></h2>
       <div id="yta"></div>
     </section>
+    <section class="card" aria-labelledby="ytg-h">
+      <div class="row"><h2 id="ytg-h" style="margin:0">Your <span>growth</span></h2><select id="ytg-range" aria-label="Growth range"><option value="28">Last 28 days</option><option value="90" selected>Last 90 days</option><option value="0">All time</option></select></div>
+      <div id="ytg"></div>
+    </section>
     <section class="card" aria-labelledby="yt-h"><h2 id="yt-h">Latest <span>uploads</span></h2><div id="yt"></div></section>
   </div>
 
@@ -196,7 +200,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
   </div>
 
   <footer>
-    <p>Numbers refresh every morning on their own. To add a stream, export <b>Stream Session</b> from Twitch's Stream Summary and send the CSV to Claude. Paste anything useful from YouTube or TikTok Studio's assistant to Claude too, and it goes into the next take.</p>
+    <p>Numbers refresh on their own every hour. To add a stream, export <b>Stream Session</b> from Twitch's Stream Summary and send the CSV to Claude. Paste anything useful from YouTube or TikTok Studio's assistant to Claude too, and it goes into the next take.</p>
   </footer>
 </div>
 
@@ -293,7 +297,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 
   function render() {
     $('updated').textContent = data.updatedAt ? 'Data updated ' + when(data.updatedAt) : '';
-    renderTake(); renderPlatforms(); renderGoals(); renderShorts(); renderSessions(); renderYouTubeAnalytics(); renderYouTube(); renderTikTok(); renderSearch(); renderTrending(); renderNotes();
+    renderTake(); renderPlatforms(); renderGoals(); renderShorts(); renderSessions(); renderYouTubeAnalytics(); renderGrowth(); renderYouTube(); renderTikTok(); renderSearch(); renderTrending(); renderNotes();
   }
 
   function renderTake() {
@@ -769,6 +773,73 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     var host = $('c-ytdaily');
     if (host && ytPts) lineChart(host, 'Views per day', { series: ytPts }, 1, 'var(--lavender)', 'line', 'views', 7,
       function (i, p) { return p[0] + (p[2] ? ' · ' + (p[2] > 0 ? '+' : '') + p[2] + ' subs' : ''); });
+    drawGrowth();
+  }
+
+  // ---------- YouTube growth (personal tracker) ----------
+  var G = null;
+  function shortDate(iso) { return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T12:00:00Z')); }
+  function stepFor(n) { return Math.max(1, Math.round(n / 5)); }
+  function drawGrowth() {
+    if (!G) return;
+    var lbl = function (i, p) { return p[4] || p[0]; };
+    if ($('c-ytsubs') && G.subs.length > 1) lineChart($('c-ytsubs'), 'Total subscribers', { series: G.subs }, 1, 'var(--good)', 'line', 'subs', stepFor(G.subs.length), lbl);
+    if ($('c-ytweeks') && G.weeks.length) lineChart($('c-ytweeks'), 'Views per week', { series: G.weeks }, 1, 'var(--lavender)', 'bar', 'views', stepFor(G.weeks.length), lbl);
+    if ($('c-ytwatch') && G.watch.length > 1) lineChart($('c-ytwatch'), 'Minutes watched per day', { series: G.watch }, 1, 'var(--gold)', 'bar', 'min', stepFor(G.watch.length), lbl);
+    if ($('c-ytnet') && G.net.length > 1) lineChart($('c-ytnet'), 'New subscribers per day', { series: G.net }, 1, 'var(--good)', 'bar', 'subs', stepFor(G.net.length), lbl);
+  }
+  function renderGrowth() {
+    var root = clear($('ytg')), sel = $('ytg-range');
+    var all = (data.youtube.daily || []).filter(function (d) { return d.day; });
+    var snaps = data.youtube.snapshots || [];
+    if (!all.length && !snaps.length) { G = null; root.appendChild(empty('Fills in as the refresh collects daily numbers.')); return; }
+    try { var saved = localStorage.getItem('hq-ytg'); if (saved != null && !sel.dataset.init) sel.value = saved; } catch (e) {}
+    sel.dataset.init = 1;
+    sel.onchange = function () { try { localStorage.setItem('hq-ytg', sel.value); } catch (e) {} renderGrowth(); };
+    var span = +sel.value, last = all.length ? all[all.length - 1].day : new Date().toISOString().slice(0, 10);
+    var from = span ? new Date(Date.parse(last + 'T12:00:00Z') - (span - 1) * 864e5).toISOString().slice(0, 10) : '0000';
+    var days = all.filter(function (d) { return d.day >= from; });
+    var sp = snaps.filter(function (x) { return x.date >= from; });
+
+    // records + streaks over the whole history
+    var best = all.reduce(function (b, d) { return !b || d.views > b.views ? d : b; }, null);
+    var weekMap = {};
+    all.forEach(function (d) {
+      var t = new Date(d.day + 'T12:00:00Z'), mon = new Date(t - ((t.getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10);
+      var w = (weekMap[mon] ??= { mon: mon, views: 0, mins: 0, subs: 0, n: 0 });
+      w.views += d.views || 0; w.mins += d.estimatedMinutesWatched || 0; w.subs += (d.subscribersGained || 0) - (d.subscribersLost || 0); w.n++;
+    });
+    var weeksAll = Object.keys(weekMap).sort().map(function (k) { return weekMap[k]; });
+    var bestWeek = weeksAll.reduce(function (b, w) { return !b || w.views > b.views ? w : b; }, null);
+    var streak = 0; for (var i = all.length - 1; i >= 0 && all[i].views > 0; i--) streak++;
+    var nowSubs = snaps.length ? snaps[snaps.length - 1].subs : null;
+    var startSubs = sp.length ? sp[0].subs : null;
+    var full = weeksAll.filter(function (w) { return w.n === 7; });
+    var wow = full.length >= 2 ? full[full.length - 1].views - full[full.length - 2].views : null;
+    var wowPct = wow != null && full[full.length - 2].views ? Math.round(wow / full[full.length - 2].views * 100) : null;
+    function tile(k, v, d) { return el('div', { class: 'tile' }, [el('div', { class: 'k', text: k }), el('div', { class: 'v', text: v }), d ? el('div', { class: 'd', text: d }) : null]); }
+    root.appendChild(el('div', { class: 'tiles', style: 'margin-bottom:8px' }, [
+      tile('Subscribers', nowSubs == null ? '–' : fmt.format(nowSubs), startSubs != null && nowSubs != null ? (nowSubs - startSubs >= 0 ? '+' : '') + (nowSubs - startSubs) + ' in this range' : 'channel total'),
+      tile('Last full week', full.length ? fmt.format(full[full.length - 1].views) : '–', wow == null ? 'views' : (wow >= 0 ? '▲ ' : '▼ ') + fmt.format(Math.abs(wow)) + (wowPct != null ? ' (' + (wowPct >= 0 ? '+' : '') + wowPct + '%)' : '') + ' vs week before'),
+      tile('Best day ever', best ? fmt.format(best.views) : '–', best ? day(best.day) : ''),
+      tile('Best week ever', bestWeek ? fmt.format(bestWeek.views) : '–', bestWeek ? 'week of ' + shortDate(bestWeek.mon) : ''),
+      tile('Views streak', streak + (streak === 1 ? ' day' : ' days'), 'in a row with views'),
+    ]));
+
+    var weeks = weeksAll.filter(function (w) { return w.mon >= from.slice(0, 10) || !span; });
+    G = {
+      subs: sp.map(function (x) { return [shortDate(x.date), x.subs, 0, 0]; }),
+      weeks: weeks.map(function (w) { return [shortDate(w.mon), w.views, 0, 0, 'week of ' + shortDate(w.mon) + (w.n < 7 ? ' (so far)' : '') + ' · ' + fmt.format(Math.round(w.mins)) + ' min · ' + (w.subs >= 0 ? '+' : '') + w.subs + ' subs']; }),
+      watch: days.map(function (d) { return [shortDate(d.day), Math.round(d.estimatedMinutesWatched || 0), 0, 0, day(d.day) + ' · avg view ' + mmss(d.averageViewDuration)]; }),
+      net: days.map(function (d) { return [shortDate(d.day), Math.max(0, (d.subscribersGained || 0) - (d.subscribersLost || 0)), 0, 0, day(d.day) + ' · ' + (d.subscribersGained || 0) + ' gained, ' + (d.subscribersLost || 0) + ' lost']; }),
+    };
+    var grid = el('div', { class: 'grid', style: 'grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px 20px' }, [
+      el('div', { class: 'chart', id: 'c-ytsubs' }), el('div', { class: 'chart', id: 'c-ytweeks' }),
+      el('div', { class: 'chart', id: 'c-ytwatch' }), el('div', { class: 'chart', id: 'c-ytnet' })]);
+    root.appendChild(grid);
+    if (G.subs.length < 2) $('c-ytsubs') && $('c-ytsubs').appendChild(el('div', { class: 'lbl', text: 'Total subscribers: builds up from each day’s refresh' }));
+    drawGrowth();
+    root.appendChild(el('p', { class: 'faint', style: 'margin:8px 0 0', text: 'History keeps building from every refresh (up to 400 days). YouTube Analytics runs 2–3 days behind; the subscriber total is live.' }));
   }
 
   function renderYouTubeAnalytics() {
