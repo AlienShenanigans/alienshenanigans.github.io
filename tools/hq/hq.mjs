@@ -56,12 +56,20 @@ const flag = (name) => { const i = rest.indexOf('--' + name); return i >= 0 ? re
 const today = () => new Date().toISOString().slice(0, 10);
 
 // ---------- Twitch "Stream Session" CSV export ----------
+// Twitch exports "6:49 PM"; HQ keeps "18:49".
+function to24h(t) {
+  const m = t.match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  if (!m) return t;
+  const h = (+m[1] % 12) + (m[3].toUpperCase() === 'PM' ? 12 : 0);
+  return `${String(h).padStart(2, '0')}:${m[2]}`;
+}
+
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/);
   const head = lines[0].split(',').map((h) => h.trim());
   return lines.slice(1).map((l) => {
     const cells = l.split(',');
-    return Object.fromEntries(head.map((h, i) => [h, h === 'Timestamp' ? cells[i].trim() : Number(cells[i])]));
+    return Object.fromEntries(head.map((h, i) => [h, h === 'Timestamp' ? to24h(cells[i].trim()) : Number(cells[i])]));
   });
 }
 
