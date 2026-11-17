@@ -483,9 +483,13 @@ export function categoryOf(game, lane) {
 
 // "<Game> Short N vX - Title.mp4" / "Combo Short N vX - Title.mp4"
 export function parseShortName(file) {
-  const m = path.basename(file).match(/^(.+?) Short (\d+) v(\d+)\s*-\s*(.+?)\.(mp4|mov|mkv)$/i);
-  if (!m) return null;
-  return { key: `${m[1]} Short ${m[2]}`, game: m[1].trim(), n: +m[2], version: +m[3], title: m[4].trim() };
+  // Week folders add a day prefix ("6 Sat - "); some older names put the version last ("... - style 2 v2").
+  const name = path.basename(file).replace(/^\d+\s+[A-Za-z]{3}\s+-\s+/, '');
+  let m = name.match(/^(.+?) Short (\d+) v(\d+)\s*-\s*(.+?)\.(mp4|mov|mkv)$/i);
+  if (m) return { key: `${m[1]} Short ${m[2]}`, game: m[1].trim(), n: +m[2], version: +m[3], title: m[4].trim() };
+  m = name.match(/^(.+?) Short (\d+)\s*-\s*(.+?)\s+v(\d+)\.(mp4|mov|mkv)$/i);
+  if (m) return { key: `${m[1]} Short ${m[2]}`, game: m[1].trim(), n: +m[2], version: +m[4], title: m[3].replace(/\s*-\s*style \d+$/i, '').trim() };
+  return null;
 }
 
 async function walk(dir, depth = 2) {
@@ -537,6 +541,7 @@ export async function buildInventory({ shortsDir, postedFile, deskFile, momentsF
     if (p?.youtube_date || p?.tiktok_date || deskStatus === 'posted') state = 'posted';
     else if (p?.scheduled || deskStatus === 'scheduled') state = 'scheduled';
     else if (deskStatus === 'dropped') state = 'dropped';
+    else if (/^week of/i.test(s.folder)) state = 'scheduled'; // already slotted into a posting week
     return {
       file: s.file, key: s.key, game: s.game, title: s.title, version: s.version, mb: Math.round(s.bytes / 1e5) / 10, folder: s.folder,
       state, posted: p ? { yt: p.youtube_date || null, tt: p.tiktok_date || null } : null,
@@ -572,7 +577,7 @@ export function inventoryFromDesk(docs) {
   const latest = {};
   for (const d of docs) {
     const f = d.file || String(d.pc_path || '').split(/[\\/]/).pop();
-    const p = parseShortName(f.replace(/^\d+ \w{3} - /, '')) || parseShortName(f.replace(/ - style \d+ v\d+/, '').replace(/^(.*?) - (.*)$/, '$1 v1 - $2'));
+    const p = parseShortName(f);
     if (!p) { console.log('  skipped (name not recognised):', f); continue; }
     const k = norm(p.key);
     if (latest[k] && latest[k].version > p.version) continue;
