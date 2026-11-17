@@ -121,6 +121,17 @@ details.fold summary:focus-visible{outline:2px solid var(--lavender);outline-off
 .bar.done>div{background:var(--good)}
 footer{margin-top:28px;font-size:14px;color:var(--ink-faint)}
 footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
+/* slot planner */
+.slots{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));margin-bottom:14px}
+.slot{padding:14px 16px;background:var(--nebula);border-radius:18px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.slot .when{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--ink-muted);font-weight:600}
+.slot .pick{font:700 1rem/1.3 var(--display);overflow-wrap:anywhere}
+.slot .why{font-size:14px;color:var(--ink-muted)}
+.slot .bk{font-size:13px;color:var(--ink-faint);border-top:1px solid var(--line);padding-top:6px;overflow-wrap:anywhere}
+.slot .mk{font-size:13px;color:var(--gold)}
+.cat{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:700;color:var(--void);background:var(--lavender)}
+.cat.horror{background:#f39aa8}.cat.current{background:var(--good)}.cat.trending{background:var(--gold)}
+.pill.warn{background:rgba(240,179,107,.15);color:var(--warn)}
 [hidden]{display:none!important}
 </style></head><body>
 
@@ -145,6 +156,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button role="tab" type="button" data-tab="overview">Overview</button>
+    <button role="tab" type="button" data-tab="plan">Plan</button>
     <button role="tab" type="button" data-tab="shorts">Shorts</button>
     <button role="tab" type="button" data-tab="twitch">Twitch</button>
     <button role="tab" type="button" data-tab="youtube">YouTube</button>
@@ -166,6 +178,11 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
       <section class="card" aria-labelledby="notes-h"><h2 id="notes-h">Studio <span>notes</span></h2><div id="notes"></div></section>
       <section class="card" aria-labelledby="tr-h"><h2 id="tr-h">What's <span>trending</span></h2><div id="trending"></div></section>
     </div>
+  </div>
+
+  <div class="panel" role="tabpanel" data-panel="plan" hidden>
+    <section class="card" aria-labelledby="plan-h"><h2 id="plan-h">Next week's <span>Shorts</span></h2><div id="plan"></div></section>
+    <section class="card take" aria-labelledby="ptake-h"><h2 id="ptake-h">Weekly <span>take</span></h2><div id="ptake"></div></section>
   </div>
 
   <div class="panel" role="tabpanel" data-panel="shorts" hidden>
@@ -297,7 +314,7 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
 
   function render() {
     $('updated').textContent = data.updatedAt ? 'Data updated ' + when(data.updatedAt) : '';
-    renderTake(); renderPlatforms(); renderGoals(); renderShorts(); renderSessions(); renderYouTubeAnalytics(); renderGrowth(); renderYouTube(); renderTikTok(); renderSearch(); renderTrending(); renderNotes();
+    renderTake(); renderPlan(); renderPlatforms(); renderGoals(); renderShorts(); renderSessions(); renderYouTubeAnalytics(); renderGrowth(); renderYouTube(); renderTikTok(); renderSearch(); renderTrending(); renderNotes();
   }
 
   function renderTake() {
@@ -312,6 +329,53 @@ footer code{background:var(--nebula);padding:1px 6px;border-radius:6px}
     });
     root.appendChild(cols);
     root.appendChild(el('p', { class: 'faint', style: 'margin:12px 0 0', text: [t.by, when(t.at)].filter(Boolean).join(' · ') }));
+  }
+
+  // ---------- slot planner ----------
+  var CAT_NAME = { random: 'Random', horror: 'Horror', current: 'Current game', trending: 'Trending' };
+  function stale(iso, days) { return iso && Date.now() - Date.parse(iso) > days * 864e5; }
+  function shortTitle(file) { var m = String(file || '').match(/ - (.+?)\.(mp4|mov|mkv)$/i); return m ? m[1] : file; }
+  function renderPlan() {
+    var root = clear($('plan')), P = data.plan, inv = data.inventory;
+    var tiles = el('div', { class: 'slots' });
+    if (!P) root.appendChild(empty('No plan yet. It comes every Saturday morning, or tick “Also write a new Shorts slot plan” in the workflow.'));
+    else (P.slots || []).forEach(function (s) {
+      tiles.appendChild(el('div', { class: 'slot' }, [
+        el('div', { class: 'when' }, [el('span', { class: 'cat ' + s.category, text: CAT_NAME[s.category] || s.category }), el('span', { text: s.day + ' ' + (s.date ? shortDate(s.date) + ' ' : '') + s.time_sast })]),
+        s.pick ? el('div', { class: 'pick', text: shortTitle(s.pick.file) }) : el('div', { class: 'pick faint', text: 'Nothing ready' }),
+        s.pick ? el('div', { class: 'why', text: s.pick.why }) : null,
+        s.backup ? el('div', { class: 'bk', text: 'Backup: ' + shortTitle(s.backup.file) + (s.backup.why ? ' · ' + s.backup.why : '') }) : null,
+        s.make_next ? el('div', { class: 'mk', text: 'Make next: ' + s.make_next.idea + (s.make_next.moment_id ? ' (' + s.make_next.moment_id + ')' : '') }) : null,
+      ]));
+    });
+    if (P) root.appendChild(tiles);
+    var chips = el('div', { class: 'meta', style: 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px' });
+    ((P && P.low_stock) || []).forEach(function (l) { chips.appendChild(el('span', { class: 'pill warn', text: 'Low stock: ' + (CAT_NAME[l.category] || l.category) + ' · ' + l.weeks_left + (l.weeks_left === 1 ? ' week' : ' weeks') + ' left' })); });
+    if (chips.firstChild) root.appendChild(chips);
+    if (inv) {
+      function tile(k, v, d) { return el('div', { class: 'tile' }, [el('div', { class: 'k', text: k }), el('div', { class: 'v', text: v }), d ? el('div', { class: 'd', text: d }) : null]); }
+      root.appendChild(el('h3', { style: 'font-size:.95rem;margin:4px 0 8px', text: 'Ready to post' }));
+      root.appendChild(el('div', { class: 'tiles', style: 'margin-bottom:8px' }, ['horror', 'current', 'random'].map(function (c) {
+        var n = inv.counts[c] || { ready: 0, A: 0 };
+        return tile(CAT_NAME[c] + (c === 'random' ? ' / trending' : ''), String(n.ready), n.A ? n.A + ' graded A' : 'none graded A');
+      })));
+    } else root.appendChild(empty('No inventory yet: run “Update HQ inventory” on the PC.'));
+    var up = [];
+    if (inv) up.push('Inventory ' + when(inv.at) + (inv.source === 'desk' ? ' (from the Shorts desk)' : '') + (stale(inv.at, 3) ? ' · old' : ''));
+    if (P) up.push('Plan ' + when(P.at) + (stale(P.at, 8) ? ' · old' : ''));
+    if (up.length) root.appendChild(el('p', { class: 'faint', style: 'margin:4px 0 0', text: 'Updated: ' + up.join(' · ') }));
+
+    var tr = clear($('ptake')), T = P && P.take;
+    if (!T) { tr.appendChild(empty('Comes with the weekly plan.')); return; }
+    tr.appendChild(el('p', { class: 'headline', text: T.headline || '' }));
+    var cols = el('div', { class: 'take-cols' });
+    if (T.trend_to_try && T.trend_to_try.what) cols.appendChild(el('div', { class: 'trend' }, [el('h3', { text: 'Try this trend' }), el('ul', null, [
+      el('li', null, [el('b', { text: T.trend_to_try.what }), ' ' + (T.trend_to_try.how || ''), ' ', /^https?:/.test(T.trend_to_try.source || '') ? el('a', { href: T.trend_to_try.source, target: '_blank', rel: 'noopener', text: 'source' }) : null])])]));
+    [['working', 'Working', 'wins'], ['not_working', 'Not working', 'worries'], ['stop_doing', 'Stop doing', 'next']].forEach(function (c) {
+      var items = T[c[0]] || []; if (!items.length) return;
+      cols.appendChild(el('div', { class: c[2] }, [el('h3', { text: c[1] }), el('ul', null, items.map(function (i) { return el('li', { text: i }); }))]));
+    });
+    tr.appendChild(cols);
   }
 
   function trendTile(name, snaps, field, unit, go) {

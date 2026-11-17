@@ -42,6 +42,36 @@ Data added by these: `shorts.history` (a dated views/likes snapshot per Short pe
 `fetch`), `shorts.links` (manual pairings), `shorts.tags` (game / hook / grade / Shorts Desk id),
 `goals`.
 
+## Weekly slot planner (Plan tab)
+
+Four Shorts a week, one per category (random, horror, current game, trending). The slot days/times and the
+game lists live in `PLANNER` at the top of `hq.mjs`.
+
+**1. Inventory (on the PC).** Double-click `tools/hq/Update HQ inventory.bat`, or run:
+
+    node tools/hq/hq.mjs inventory            # defaults below; add --no-push to try it without committing
+      --shorts  "D:\Content Creation Videos\03 Edits\Shorts"   (and its "Week of ..." subfolders)
+      --posted  "D:\Ready for Claude\_posted.json"
+      --desk    "D:\Ready for Claude\_desk-export.json"        (optional: grade, status, lane per Short)
+      --moments "D:\Ready for Claude\_moment-library.jsonl"     (top 40 unused moments, score 7+)
+    node tools/hq/hq.mjs inventory --from-desk <folder of desk JSON docs | list.json>   # no PC needed
+
+It only reads those files. It saves `data.inventory` and commits and pushes `hq/data.enc` only.
+Set the password once in Windows: `setx HQ_PASSWORD "your password"`.
+
+Nightly with Task Scheduler: Create Basic Task → Daily, e.g. 03:30 → Start a program →
+Program: the full path to `Update HQ inventory.bat` → Start in: the repo folder. Tick "Run whether user is logged on or not".
+
+**2. Trend data.** `fetch` now also stores `data.trending.weekly` (last 8 weeks): Twitch viewers and live channels
+(top 100 streams) for the games in `PLANNER.watchGames`, the top 3 Shorts per lane game from the last 7 days
+(YouTube search, once a week, about 600 of the 10,000 daily API units) and Steam's top sellers and new releases (no key).
+
+**3. Plan.** `node tools/hq/hq.mjs plan` (needs `ANTHROPIC_API_KEY`) runs on the Saturday ~05:17 UTC refresh, or tick
+"Also write a new Shorts slot plan" in the workflow. Claude gets the inventory, Shorts numbers, trend data, the last 2 plans
+and web search. Picks that aren't "ready" are thrown out. Saved as `data.plan` (latest) and `data.plans` (last 8), and sent
+to the Shorts desk as `plan` in `desk-feed.enc`. A plan written elsewhere: `node tools/hq/hq.mjs set-plan plan.json [--week YYYY-MM-DD]`.
+No new secrets.
+
 ## Shorts desk feed
 
 Every refresh also writes `hq/desk-feed.enc` (https://alienshenanigans.github.io/hq/desk-feed.enc): a small
@@ -50,7 +80,7 @@ summary for the Shorts desk, encrypted with the same password and box format as 
 
     {at, channel:{yt:[{date,subs,views}], tt:[{date,followers,likes}], twitch:[{date,followers}]}, goals,
      shorts:{<desk id or YouTube id>:{yt_id,title,published,yt_views,yt_likes,yt_comments,avg_pct,tt_views,tt_likes,subs}},
-     trending:{youtube_gaming:[titles], twitch_top_games:[names]}, opinion, opinion_at}
+     trending:{youtube_gaming:[titles], twitch_top_games:[names]}, opinion, opinion_at, plan}
 
 `avg_pct` and `subs` come from YouTube Analytics' last 28 days (top 15 videos), so they are null for a Short that
 isn't in that list yet. `opinion` is the last saved take, as plain text. The desk writes its own fresh opinion.

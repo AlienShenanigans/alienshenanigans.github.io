@@ -9,6 +9,10 @@ on:
         description: 'Also write a new take with Claude'
         type: boolean
         default: false
+      plan:
+        description: 'Also write a new Shorts slot plan with Claude'
+        type: boolean
+        default: false
       tiktok_code:
         description: 'TikTok sign-in code (one-time, from /hq/tiktok.html)'
         type: string
@@ -53,6 +57,12 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if [ "${{ inputs.take }}" = "true" ] || { [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%H)" = "05" ]; }; then node tools/hq/hq.mjs take; else echo "Take only runs on the 05 UTC refresh"; fi
+      - name: Weekly slot plan (Saturday ~07:17 SAST, or when asked)
+        env:
+          HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ "${{ inputs.plan }}" = "true" ] || { [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%u%H)" = "605" ]; }; then node tools/hq/hq.mjs plan; else echo "Plan only runs on the Saturday 05 UTC refresh"; fi
       - name: Shorts desk feed
         env:
           HQ_PASSWORD: ${{ secrets.HQ_PASSWORD }}
