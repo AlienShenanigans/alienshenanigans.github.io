@@ -621,7 +621,7 @@ async function saveInventory(inv) {
   const fresh = await load(); fresh.inventory = inv; await save(fresh);
   git('add', 'hq/data.enc');
   try { git('diff', '--cached', '--quiet'); return console.log('Nothing to commit.'); } catch { /* changes staged */ }
-  git('commit', '-m', 'Update HQ inventory', '--', 'hq/data.enc');
+  git('-c', 'user.name=hq-bot', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com', 'commit', '-m', 'Update HQ inventory', '--', 'hq/data.enc');
   git('push');
 }
 
