@@ -39,7 +39,7 @@ export const PLANNER = {
     { from: '2026-01-01', slots: [
       { category: 'random', day: 0, time: '18:00' }, { category: 'horror', day: 2, time: '16:30' },
       { category: 'current', day: 4, time: '18:00' }, { category: 'trending', day: 6, time: '18:00' }] },
-    { from: '2026-12-06', slots: [
+    { from: '2026-11-18', slots: [
       { category: 'horror', day: 3, time: '18:00' }, { category: 'current', day: 4, time: '18:00' },
       { category: 'trending', day: 6, time: '18:00' }, { category: 'random', day: 0, time: '18:00' }] },
   ],
@@ -366,7 +366,7 @@ function briefFor(data) {
 }
 
 const TAKE_PROMPT = `You are the performance coach for Ali ("Alien Shenanigans"), a small gaming VTuber.
-She streams on Twitch (Tuesdays, soon Thursdays, 16:30 UTC; she is in South Africa, timestamps in stream CSVs are SAST),
+She streams on Twitch (Tuesdays 16:30 UTC until 1 Dec 2026, then Wednesdays (horror) and Saturdays (RPG) 18:00 UTC from 5 Dec; she is in South Africa, timestamps in stream CSVs are SAST),
 posts edited long-form and Shorts on YouTube, and Shorts on TikTok. Her lane: fails, horror games and old games played badly.
 
 Below is her latest data as JSON. Write a short, honest, specific take. Small numbers are normal for her size:
@@ -704,13 +704,14 @@ export function nextSunday(now = new Date()) {
 }
 
 const PLAN_PROMPT = `You plan next week's 4 Shorts for Ali ("Alien Shenanigans"), a small alien VTuber.
-One Short per category: random (fun one-off or themed combo), horror (old horror), current (what she streams now),
+Slots (SAST): Wed horror, Thu current, Sat trending, Sun random. One Short per category: random (fun one-off or themed combo), horror (one horror game at a time), current (what she streams now),
 trending (her best lane by recent numbers, or something hot online this week).
 
 RULES
 - Only pick Shorts from inventory.shorts with state "ready". Use the exact "file" value.
 - Grade A before B. Skip C unless nothing else fits.
 - Put the strongest picks on the weekend slots.
+- One game per lane (her rule): horror, current and trending each stick with ONE game until its good Shorts run out. Keep each lane on the game of its most recently posted Short (see shorts_numbers titles) unless that game has no ready Short; random is the variety slot (any other game).
 - No game twice in one week unless stock forces it.
 - If a category has nothing good, set make_next to an unused moment from inventory.moments (its id) or a trend idea (moment_id null).
 - Every "why" is under 10 words, plain words, no jargon.
