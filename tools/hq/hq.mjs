@@ -44,9 +44,9 @@ export const PLANNER = {
       { category: 'trending', day: 6, time: '18:00' }, { category: 'random', day: 0, time: '18:00' }] },
   ],
   horrorGames: ['Alien: Isolation', 'Alien Isolation', 'Dead Space', 'Deadspace', 'Phasmophobia', 'Slender'],
-  currentGames: ['WoW: Forever', 'WoW Forever', 'World of Warcraft', 'WoW', 'The Witcher 3', 'Witcher 3', 'Witcher'],
+  currentGames: ['WoW: Forever', 'WoW Forever', 'World of Warcraft', 'WoW', 'The Witcher 3', 'Witcher 3', 'Witcher', 'Fallout 3'],
   // Extra games watched on Twitch / YouTube for "rising this week" (besides the two lists above).
-  watchGames: ['Fallout: New Vegas', 'World of Warcraft', 'Phasmophobia', 'Dead Space', 'Alien: Isolation', 'The Witcher 3: Wild Hunt'],
+  watchGames: ['Fallout: New Vegas', 'World of Warcraft', 'Phasmophobia', 'Dead Space', 'Alien: Isolation', 'The Witcher 3: Wild Hunt', 'Fallout 3'],
   minMomentScore: 7, maxMoments: 40, weeksKept: 8,
 };
 const CATS = ['random', 'horror', 'current', 'trending'];
@@ -366,7 +366,7 @@ function briefFor(data) {
 }
 
 const TAKE_PROMPT = `You are the performance coach for Ali ("Alien Shenanigans"), a small gaming VTuber.
-She streams on Twitch (Tuesdays 16:30 UTC until 1 Dec 2026, then Wednesdays (horror) and Saturdays (RPG) 18:00 UTC from 5 Dec; she is in South Africa, timestamps in stream CSVs are SAST),
+She streams on Twitch (Tuesdays 16:30 UTC until 24 Nov 2026, then Wednesdays (horror, Alien: Isolation) from 2 Dec 18:00 UTC, and Sundays (RPG, Fallout 3) from 6 Dec, 16:30 UTC; she is in South Africa, timestamps in stream CSVs are SAST),
 posts edited long-form and Shorts on YouTube, and Shorts on TikTok. Her lane: fails, horror games and old games played badly.
 
 Below is her latest data as JSON. Write a short, honest, specific take. Small numbers are normal for her size:
