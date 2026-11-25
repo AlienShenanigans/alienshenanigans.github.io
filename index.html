@@ -134,7 +134,7 @@ footer a{color:var(--lavender)}
 </main>
 <script>
 (function () {
-  // Tuesdays 16:30 UTC (18:30 SAST) until Tue 24 Nov 2026 (no stream Tue 1 Dec); from Wed 2 Dec, Wednesdays and Sundays 18:00 UTC (20:00 SAST).
+  // Tuesdays 16:30 UTC (18:30 SAST) until Tue 24 Nov 2026 (no stream Tue 1 Dec); from Wed 2 Dec, Wednesdays 18:00 UTC (20:00 SAST) and Sundays 16:30 UTC (18:30 SAST).
   // Intl handles US/UK daylight saving.
   var NEW_FROM = Date.UTC(2026, 11, 2);
   var TUE_UNTIL = Date.UTC(2026, 10, 25);
@@ -142,7 +142,10 @@ footer a{color:var(--lavender)}
 
   function slotOn(day) { // stream start on that UTC day, or null
     var wd = day.getUTCDay(), y = day.getUTCFullYear(), m = day.getUTCMonth(), dd = day.getUTCDate();
-    if (Date.UTC(y, m, dd) >= NEW_FROM) return (wd === 3 || wd === 0) ? new Date(Date.UTC(y, m, dd, 18, 0)) : null;
+    if (Date.UTC(y, m, dd) >= NEW_FROM) {
+      if (wd === 3) return new Date(Date.UTC(y, m, dd, 18, 0));
+      return wd === 0 ? new Date(Date.UTC(y, m, dd, 16, 30)) : null;
+    }
     return (wd === 2 && Date.UTC(y, m, dd) < TUE_UNTIL) ? new Date(Date.UTC(y, m, dd, 16, 30)) : null;
   }
   var next = null;
