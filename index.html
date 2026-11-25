@@ -134,15 +134,16 @@ footer a{color:var(--lavender)}
 </main>
 <script>
 (function () {
-  // Tuesdays 16:30 UTC (18:30 SAST) until Tue 1 Dec 2026; from Sat 5 Dec, Wednesdays and Saturdays 18:00 UTC (20:00 SAST).
+  // Tuesdays 16:30 UTC (18:30 SAST) until Tue 24 Nov 2026 (no stream Tue 1 Dec); from Wed 2 Dec, Wednesdays and Sundays 18:00 UTC (20:00 SAST).
   // Intl handles US/UK daylight saving.
-  var NEW_FROM = Date.UTC(2026, 11, 5);
+  var NEW_FROM = Date.UTC(2026, 11, 2);
+  var TUE_UNTIL = Date.UTC(2026, 10, 25);
   var now = new Date();
 
   function slotOn(day) { // stream start on that UTC day, or null
     var wd = day.getUTCDay(), y = day.getUTCFullYear(), m = day.getUTCMonth(), dd = day.getUTCDate();
-    if (Date.UTC(y, m, dd) >= NEW_FROM) return (wd === 3 || wd === 6) ? new Date(Date.UTC(y, m, dd, 18, 0)) : null;
-    return wd === 2 ? new Date(Date.UTC(y, m, dd, 16, 30)) : null;
+    if (Date.UTC(y, m, dd) >= NEW_FROM) return (wd === 3 || wd === 0) ? new Date(Date.UTC(y, m, dd, 18, 0)) : null;
+    return (wd === 2 && Date.UTC(y, m, dd) < TUE_UNTIL) ? new Date(Date.UTC(y, m, dd, 16, 30)) : null;
   }
   var next = null;
   for (var i = 0; i < 15 && !next; i++) {
@@ -154,7 +155,7 @@ footer a{color:var(--lavender)}
   function fmt(opts, date) { return new Intl.DateTimeFormat('en-US', opts).format(date || next); }
   var time = { hour: 'numeric', minute: '2-digit' };
 
-  document.getElementById('days').textContent = next.getTime() >= NEW_FROM ? 'Wednesdays & Saturdays' : 'Tuesdays';
+  document.getElementById('days').textContent = next.getTime() >= NEW_FROM ? 'Wednesdays & Sundays' : 'Tuesdays';
   document.getElementById('t-et').textContent = fmt(Object.assign({ timeZone: 'America/New_York' }, time));
   document.getElementById('t-uk').textContent = fmt(Object.assign({ timeZone: 'Europe/London' }, time));
 
